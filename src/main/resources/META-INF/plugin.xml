@@ -1,0 +1,65 @@
+<idea-plugin>
+    <id>com.my.junit.testmanager</id>
+    <name>JUnit Test Manager</name>
+    <version>1.0.0</version>
+    <vendor email="ikjapan1@gmail.com">Kuznetsov Igor</vendor>
+
+    <description>
+        <![CDATA[
+JUnit Test Manager simplifies JUnit testing in Java projects: generate run configurations with custom VM options, group tests by regex paths, and auto-relocate misplaced tests after refactoring.\n
+JUnit Test Manager упрощает работу с JUnit-тестами в Java-проектах: генерирует конфигурации запуска с кастомными VM-аргументами, группирует тесты по regex-путям и автоматически перемещает тесты в нужные пакеты после рефакторинга.
+        ]]>
+    </description>
+
+    <change-notes>
+        <![CDATA[
+        Initial release.
+    ]]>
+    </change-notes>
+
+    <idea-version since-build="241.0"/>
+
+    <resource-bundle>message</resource-bundle>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.my.junit.testmanager.config.TestManagerSettings"/>
+
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.my.junit.testmanager.ui.SettingsConfiguration"
+                id="TestManager.settings"
+                displayName="Test Manager Settings"
+                nonDefaultProject="false"/>
+    </extensions>
+
+    <actions>
+        <group id="JUnit Test Manager"
+               text="JUnit Test Manager"
+               description="JUnit Test Manager Actions"
+               popup="true">
+
+            <action id="FindTestsInDirectoryAction"
+                    class="com.my.junit.testmanager.actions.FindTestsInDirectoryAction"
+                    text="Find Tests in Directory">
+            </action>
+            <action id="FindTestsInChangesAction"
+                    class="com.my.junit.testmanager.actions.FindTestsInChangesAction"
+                    text="Find Tests in Changes">
+            </action>
+            <action id="FindAllTestsAction"
+                    class="com.my.junit.testmanager.actions.FindAllTestsAction"
+                    text="Find All Tests in Project">
+            </action>
+            <action id="RelocateTestsAction"
+                    class="com.my.junit.testmanager.actions.RelocateTestsAction"
+                    text="Relocate Tests">
+            </action>
+            <action id="RelocateChangesTestsAction"
+                    class="com.my.junit.testmanager.actions.RelocateChangesTestsAction"
+                    text="Relocate Changes Tests">
+            </action>
+
+            <add-to-group group-id="RunContextGroup" anchor="last"/>
+        </group>
+    </actions>
+</idea-plugin>

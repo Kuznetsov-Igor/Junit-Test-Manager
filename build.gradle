@@ -1,0 +1,63 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id("org.jetbrains.intellij") version "1.17.4"
+}
+
+group = 'com.my.junit.testmanager'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.eclipse.jgit:org.eclipse.jgit:7.4.0.202509020913-r")
+    implementation ('com.intellij:forms_rt:7.0.3')
+
+    testImplementation("junit:junit:4.13.2")
+
+    compileOnly("org.projectlombok:lombok:1.18.38")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
+
+    testCompileOnly("org.projectlombok:lombok:1.18.38")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.38")
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+}
+
+
+intellij {
+    instrumentCode.set(true)
+    type.set("IC")
+    version.set("2024.1.4")
+    plugins.set(
+            [
+               "java",
+               "junit"
+            ]
+    )
+    // Директория песочницы для изолированного запуска IDEA
+    // sandboxDir.set('')
+}
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+
