@@ -15,3 +15,5 @@ The plugin is available for installation in two ways:
 
 - **From JetBrains Marketplace**: Search for "JUnit Test Manager" in the IntelliJ IDEA Plugin Marketplace and install it directly.
 - **Manual Installation**: Download the plugin from the [GitHub Releases](https://github.com/Kuznetsov-Igor/Junit-Test-Manager/releases) page and install it manually in IntelliJ IDEA.
+
+[Donation](https://nowpayments.io/donation/ikjapan1)
