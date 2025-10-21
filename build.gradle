@@ -1,32 +1,46 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
 plugins {
-    id("org.jetbrains.intellij") version "1.17.4"
+    id("java")
+    id("org.jetbrains.intellij.platform") version "2.10.1"
+    id("org.jetbrains.changelog") version "2.2.0"
+    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.8"
 }
 
-group = 'com.my.junit.testmanager'
-version = '1.0.0'
+group = providers.gradleProperty("pluginGroup").get()
+version = providers.gradleProperty("pluginVersion").get()
 
 repositories {
     mavenCentral()
+
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
 dependencies {
     implementation("org.eclipse.jgit:org.eclipse.jgit:7.4.0.202509020913-r")
-    implementation ('com.intellij:forms_rt:7.0.3')
-
-    testImplementation("junit:junit:4.13.2")
-
+    implementation("com.intellij:forms_rt:7.0.3")
     compileOnly("org.projectlombok:lombok:1.18.38")
     annotationProcessor("org.projectlombok:lombok:1.18.38")
 
+    testImplementation("junit:junit:4.13.2")
     testCompileOnly("org.projectlombok:lombok:1.18.38")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.38")
+
+    intellijPlatform {
+        create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
+
+        bundledPlugins(providers.gradleProperty("platformBundledPlugins").map {
+            it.isEmpty() ? [] : it.split(',').toList()
+        })
+
+        plugins(providers.gradleProperty("platformPlugins").map {
+            it.isEmpty() ? [] : it.split(',').toList()
+        })
+
+        bundledModules(providers.gradleProperty("platformBundledModules").map {
+            it.isEmpty() ? [] : it.split(',').toList()
+        })
+    }
 }
 
 java {
@@ -37,27 +51,27 @@ java {
 sourceSets {
     main {
         resources {
-            srcDirs = ['src/main/resources']
+            srcDirs = ["src/main/resources"]
         }
     }
 }
 
-
-intellij {
-    instrumentCode.set(true)
-    type.set("IC")
-    version.set("2024.1.4")
-    plugins.set(
-            [
-               "java",
-               "junit"
-            ]
-    )
-    // Директория песочницы для изолированного запуска IDEA
-    // sandboxDir.set('')
+intellijPlatform {
+    pluginConfiguration {
+        name = providers.gradleProperty("pluginName")
+        version = providers.gradleProperty("pluginVersion")
+        ideaVersion {
+            sinceBuild = providers.gradleProperty("pluginSinceBuild")
+        }
+    }
 }
+
 tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
+    options.encoding = "UTF-8"
 }
 
+changelog {
+    groups.empty()
+    repositoryUrl = providers.gradleProperty("pluginRepositoryUrl")
+}
 

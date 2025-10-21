@@ -150,7 +150,8 @@
 
 ### Протестировано на
 Протестировано:
-  - Ubuntu 20.04.6 LTS
-    - IntelliJ IDEA 2024.1.6 (Community Edition) Runtime version: 17.0.11+1-b1207.30 amd64, VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.
-  - Windows 10 Pro 22H2 19045.6456
-    - IntelliJ IDEA 2024.1.4 (Ultimate Edition), Runtime version: 17.0.11+1-b1207.24 amd64 , VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.
+- Ubuntu 20.04.6 LTS
+  - IntelliJ IDEA 2024.1.6 (Community Edition) Runtime version: 17.0.11+1-b1207.30 amd64, VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.
+  - IntelliJ IDEA 2025.2.3 (Community Edition) Runtime version: 21.0.8+9-b1038.72 amd64 (JCEF 122.1.9) VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.
+- Windows 10 Pro 22H2 19045.6456
+  - IntelliJ IDEA 2024.1.4 (Ultimate Edition), Runtime version: 17.0.11+1-b1207.24 amd64 , VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.

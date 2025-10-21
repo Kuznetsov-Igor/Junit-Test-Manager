@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.my.junit.testmanager</id>
     <name>JUnit Test Manager</name>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <vendor email="ikjapan1@gmail.com">Kuznetsov Igor</vendor>
 
     <description>
@@ -13,11 +13,15 @@ JUnit Test Manager упрощает работу с JUnit-тестами в Java
 
     <change-notes>
         <![CDATA[
-        Initial release.
+        Version 1.0.1: Fixed compatibility issues with IntelliJ IDEA versions. Updated since-build to 241 for better support from 2024.1+, added until-build for future-proofing, and synced platform version to 2024.2 for stability. No breaking changes.
     ]]>
     </change-notes>
 
-    <idea-version since-build="241.0"/>
+
+    <idea-version since-build="241" until-build="999.*"/>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
 
     <resource-bundle>message</resource-bundle>
 
