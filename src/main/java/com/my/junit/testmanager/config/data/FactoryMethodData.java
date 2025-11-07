@@ -2,7 +2,6 @@ package com.my.junit.testmanager.config.data;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -33,7 +32,6 @@ public class FactoryMethodData {
         this.factoryClass = factoryClass;
         this.methodName = methodName;
         this.imports = imports;
-        RandomStringUtils.randomAlphabetic(5);
     }
 
     public static FactoryMethodData of(
