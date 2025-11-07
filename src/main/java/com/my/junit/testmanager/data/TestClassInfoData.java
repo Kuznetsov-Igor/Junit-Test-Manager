@@ -1,7 +1,7 @@
 package com.my.junit.testmanager.data;
 
 import com.intellij.psi.PsiClass;
-import com.my.junit.testmanager.config.data.GroupConfigData;
+import com.my.junit.testmanager.config.data.GroupData;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,7 +25,7 @@ public class TestClassInfoData {
     /**
      * Группа, к которой относится тестовый класс.
      */
-    private GroupConfigData group = GroupConfigData.DEFAULT;
+    private GroupData group = GroupData.DEFAULT;
 
     public static TestClassInfoData of(
             @NotNull String name,

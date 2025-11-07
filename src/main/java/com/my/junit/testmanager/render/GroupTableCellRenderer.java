@@ -1,6 +1,6 @@
 package com.my.junit.testmanager.render;
 
-import com.my.junit.testmanager.config.data.GroupConfigData;
+import com.my.junit.testmanager.config.data.GroupData;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -30,7 +30,7 @@ public class GroupTableCellRenderer extends DefaultTableCellRenderer {
                 column
         );
 
-        if (value instanceof GroupConfigData group) {
+        if (value instanceof GroupData group) {
             var bg = group.getColor();
             setBackground(bg);
             setText(group.getName());

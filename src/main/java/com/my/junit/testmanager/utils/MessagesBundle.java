@@ -1,6 +1,6 @@
 package com.my.junit.testmanager.utils;
 
-import com.my.junit.testmanager.config.TestManagerSettings;
+import com.my.junit.testmanager.config.TestManagerConfig;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.PropertyKey;
@@ -29,7 +29,7 @@ public class MessagesBundle {
             @NotNull @PropertyKey(resourceBundle = BUNDLE_BASE_NAME) String key,
             @NotNull Object... params
     ) {
-        final var settings = TestManagerSettings.getInstance();
+        final var settings = TestManagerConfig.getInstance();
         return message(settings.getLanguage(), key, params);
     }
 

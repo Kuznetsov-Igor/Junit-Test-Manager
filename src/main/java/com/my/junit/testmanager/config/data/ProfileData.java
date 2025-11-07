@@ -10,7 +10,7 @@ import static java.util.Objects.requireNonNull;
  * Содержит: наименование.
  */
 @Data
-public class ProfileConfigData {
+public class ProfileData {
     /**
      * Название профиля (отображается в UI)
      */
@@ -19,21 +19,21 @@ public class ProfileConfigData {
     /**
      * Дефолтный профиль настроек
      */
-    public static final ProfileConfigData DEFAULT = new ProfileConfigData();
+    public static final ProfileData DEFAULT = new ProfileData();
 
-    public static ProfileConfigData of(
+    public static ProfileData of(
             @NotNull String name
     ) {
-        return new ProfileConfigData(
+        return new ProfileData(
                 name
         );
     }
 
-    public ProfileConfigData() {
+    public ProfileData() {
         this("Default");
     }
 
-    public ProfileConfigData(
+    public ProfileData(
             @NotNull String name
     ) {
         this.name = requireNonNull(name, "name cannot be null");

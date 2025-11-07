@@ -1,20 +1,12 @@
 <idea-plugin>
     <id>com.my.junit.testmanager</id>
     <name>JUnit Test Manager</name>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <vendor email="ikjapan1@gmail.com">Kuznetsov Igor</vendor>
 
-    <description>
-        <![CDATA[
-JUnit Test Manager simplifies JUnit testing in Java projects: generate run configurations with custom VM options, group tests by regex paths, and auto-relocate misplaced tests after refactoring.\n
-JUnit Test Manager упрощает работу с JUnit-тестами в Java-проектах: генерирует конфигурации запуска с кастомными VM-аргументами, группирует тесты по regex-путям и автоматически перемещает тесты в нужные пакеты после рефакторинга.
-        ]]>
-    </description>
+    <description> <![CDATA[ JUnit Test Manager simplifies JUnit testing in Java projects: generate run configurations with custom VM options, group tests by regex paths, auto-relocate misplaced tests after refactoring, and create test data generator classes for quick instantiation of model objects in tests.\n JUnit Test Manager упрощает работу с JUnit-тестами в Java-проектах: генерирует конфигурации запуска с кастомными VM-аргументами, группирует тесты по regex-путям, автоматически перемещает тесты в нужные пакеты после рефакторинга и создает классы-генераторы тестовых данных для быстрого создания экземпляров моделей в тестах. ]]> </description>
 
-    <change-notes>
-        <![CDATA[
-        Version 1.0.1: Fixed compatibility issues with IntelliJ IDEA versions. Updated since-build to 241 for better support from 2024.1+, added until-build for future-proofing, and synced platform version to 2024.2 for stability. No breaking changes.
-    ]]>
+    <change-notes> <![CDATA[ Version 1.0.2: Added generation of test data classes for quick creation of model objects in tests, including recursive dependency handling and support for records. ]]>
     </change-notes>
 
 
@@ -26,14 +18,23 @@ JUnit Test Manager упрощает работу с JUnit-тестами в Java
     <resource-bundle>message</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.my.junit.testmanager.config.TestManagerSettings"/>
+        <applicationService serviceImplementation="com.my.junit.testmanager.config.TestManagerConfig"/>
+        <projectService serviceImplementation="com.my.junit.testmanager.config.TestGeneratorConfig"/>
 
         <applicationConfigurable
                 parentId="tools"
-                instance="com.my.junit.testmanager.ui.SettingsConfiguration"
-                id="TestManager.settings"
+                instance="com.my.junit.testmanager.ui.SettingsConfigurationForm"
+                id="JunitTestManager.settings"
                 displayName="Test Manager Settings"
                 nonDefaultProject="false"/>
+
+        <projectConfigurable
+                parentId="JunitTestManager.settings"
+                instance="com.my.junit.testmanager.ui.SettingsTestGeneratorForm"
+                id="JunitTestManager.testGenerator.settings"
+                displayName="Test Data Generators"/>
+
+        <notificationGroup id="JUnitTestManagerNotifications" displayType="BALLOON" isLogByDefault="true"/>
     </extensions>
 
     <actions>
@@ -65,5 +66,12 @@ JUnit Test Manager упрощает работу с JUnit-тестами в Java
 
             <add-to-group group-id="RunContextGroup" anchor="last"/>
         </group>
+
+        <action id="GenerateTestDataGeneratorsAction"
+                class="com.my.junit.testmanager.actions.GenerateTestDataGeneratorsAction"
+                text="Generate Test Data Generators">
+            <add-to-group group-id="GenerateGroup" anchor="last"/>
+        </action>
+
     </actions>
 </idea-plugin>

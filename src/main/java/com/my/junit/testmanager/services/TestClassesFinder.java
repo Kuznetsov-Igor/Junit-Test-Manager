@@ -3,7 +3,7 @@ package com.my.junit.testmanager.services;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
-import com.my.junit.testmanager.config.TestManagerSettings;
+import com.my.junit.testmanager.config.TestManagerConfig;
 import com.my.junit.testmanager.data.SearchType;
 import com.my.junit.testmanager.data.TestClassInfoData;
 import com.my.junit.testmanager.utils.LoggerUtils;
@@ -146,7 +146,7 @@ public class TestClassesFinder {
     private void determineGroup(@NotNull TestClassInfoData testClassInfoData) {
         log.logInfo("Determining group for test class: " + testClassInfoData.getName());
 
-        final var settings = TestManagerSettings.getInstance();
+        final var settings = TestManagerConfig.getInstance();
 
         final var groups = settings.getGroups();
         final var assigned = groups.stream()

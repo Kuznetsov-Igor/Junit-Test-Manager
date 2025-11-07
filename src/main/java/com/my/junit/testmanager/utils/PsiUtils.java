@@ -360,4 +360,19 @@ public class PsiUtils {
             }
         });
     }
+
+    /**
+     * Проверяет, является ли заданный PsiClass record'ом (с Java 14+).
+     *
+     * @param clazz PsiClass для проверки.
+     * @return true, если класс — record, иначе false.
+     */
+    public static boolean isRecord(PsiClass clazz) {
+        if (clazz == null) {
+            return false;
+        }
+        var superClass = clazz.getSuperClass();
+        return superClass != null && "java.lang.Record".equals(superClass.getQualifiedName());
+    }
+
 }

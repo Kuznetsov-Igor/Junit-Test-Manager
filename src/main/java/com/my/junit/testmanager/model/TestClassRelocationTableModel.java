@@ -1,10 +1,8 @@
 package com.my.junit.testmanager.model;
 
 import com.my.junit.testmanager.data.TestClassRelocationData;
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.table.AbstractTableModel;
 import java.util.List;
 
 import static com.my.junit.testmanager.utils.MessagesBundle.message;
@@ -12,10 +10,7 @@ import static com.my.junit.testmanager.utils.MessagesBundle.message;
 /**
  * Модель таблицы для отображения перемещений тестовых классов.
  */
-public class TestClassRelocationTableModel extends AbstractTableModel {
-    @Getter
-    private final List<TestClassRelocationData> items;
-
+public class TestClassRelocationTableModel extends AbstractBaseTableModel<TestClassRelocationData> {
     private final String[] columnNames = {
             message("table.relocation.column.selected"),
             message("table.column.name"),
@@ -24,22 +19,7 @@ public class TestClassRelocationTableModel extends AbstractTableModel {
     };
 
     public TestClassRelocationTableModel(@NotNull List<TestClassRelocationData> items) {
-        this.items = items;
-    }
-
-    @Override
-    public int getRowCount() {
-        return items.size();
-    }
-
-    @Override
-    public int getColumnCount() {
-        return columnNames.length;
-    }
-
-    @Override
-    public String getColumnName(int column) {
-        return columnNames[column];
+        super(items);
     }
 
     @Override
@@ -58,17 +38,17 @@ public class TestClassRelocationTableModel extends AbstractTableModel {
     }
 
     @Override
+    public String[] getColumnNames() {
+        return columnNames;
+    }
+
+    @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
         if (rowIndex < 0 || rowIndex >= items.size() || columnIndex != 0 || !(aValue instanceof Boolean)) {
             return;
         }
         items.get(rowIndex).setSelected((Boolean) aValue);
         fireTableCellUpdated(rowIndex, columnIndex);
-    }
-
-    @Override
-    public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return columnIndex == 0;
     }
 
     @Override

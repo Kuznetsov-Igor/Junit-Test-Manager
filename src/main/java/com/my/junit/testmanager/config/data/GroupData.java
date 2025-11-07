@@ -16,7 +16,7 @@ import static java.util.Objects.requireNonNull;
  * VM-аргументы, цвет для отображения в UI, список профилей.
  */
 @Data
-public class GroupConfigData {
+public class GroupData {
     public static final String COLOR_DEFAULT_HEX = "#808080";
 
     /**
@@ -38,11 +38,11 @@ public class GroupConfigData {
     /**
      * Список профилей, связанных с этой группой (может быть пустым, но не null)
      */
-    private List<ProfileConfigData> profiles;
+    private List<ProfileData> profiles;
     /**
      * Дефолтная группа настроек
      */
-    public static final GroupConfigData DEFAULT = new GroupConfigData();
+    public static final GroupData DEFAULT = new GroupData();
 
     /**
      * Создает группу настроек с заданными параметрами.
@@ -53,14 +53,14 @@ public class GroupConfigData {
      * @param color  - цвет (может быть null)
      * @return Группа настроек с заданными параметрами.
      */
-    public static GroupConfigData of(
+    public static GroupData of(
             @NotNull String name,
             @Nullable String regex,
             @Nullable String vmArgs,
             @Nullable Color color,
-            @NotNull List<ProfileConfigData> profiles
+            @NotNull List<ProfileData> profiles
     ) {
-        return new GroupConfigData(
+        return new GroupData(
                 name,
                 regex,
                 vmArgs,
@@ -69,22 +69,22 @@ public class GroupConfigData {
         );
     }
 
-    public GroupConfigData() {
+    public GroupData() {
         this(
                 "Default",
                 null,
                 null,
                 COLOR_DEFAULT_HEX,
-                new ArrayList<>(List.of(ProfileConfigData.DEFAULT))
+                new ArrayList<>(List.of(ProfileData.DEFAULT))
         );
     }
 
-    public GroupConfigData(
+    public GroupData(
             @NotNull String name,
             @Nullable String regex,
             @Nullable String vmArgs,
             @Nullable Color color,
-            @Nullable List<ProfileConfigData> profiles
+            @Nullable List<ProfileData> profiles
     ) {
         this.name = requireNonNull(name, "Group name cannot be null");
         this.regex = regex;
@@ -93,12 +93,12 @@ public class GroupConfigData {
         this.profiles = profiles != null ? new ArrayList<>(profiles) : new ArrayList<>();
     }
 
-    public GroupConfigData(
+    public GroupData(
             @NotNull String name,
             @Nullable String regex,
             @Nullable String vmArgs,
             @Nullable String hexColor,
-            @Nullable List<ProfileConfigData> profiles
+            @Nullable List<ProfileData> profiles
     ) {
         this.name = requireNonNull(name, "Group name cannot be null");
         this.regex = regex;
@@ -112,7 +112,7 @@ public class GroupConfigData {
      *
      * @param profile - профиль для добавления (не null)
      */
-    public void addProfile(@NotNull ProfileConfigData profile) {
+    public void addProfile(@NotNull ProfileData profile) {
         this.profiles.add(profile);
     }
 
@@ -121,7 +121,7 @@ public class GroupConfigData {
      *
      * @param profile - профиль для удаления (не null)
      */
-    public void removeProfile(@NotNull ProfileConfigData profile) {
+    public void removeProfile(@NotNull ProfileData profile) {
         this.profiles.remove(profile);
     }
 

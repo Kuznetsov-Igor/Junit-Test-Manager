@@ -4,7 +4,7 @@ import com.intellij.execution.RunManager;
 import com.intellij.execution.configurations.ConfigurationTypeUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
-import com.my.junit.testmanager.config.data.GroupConfigData;
+import com.my.junit.testmanager.config.data.GroupData;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,7 +29,7 @@ public class JunitTestConfigurationUtils {
     public static void createJunitConfigurationTest(
             @NotNull Project project,
             @NotNull List<PsiClass> psiClasses,
-            @NotNull GroupConfigData group
+            @NotNull GroupData group
     ) {
         log.logInfo("Creating test configuration for group: " + group.getName());
 

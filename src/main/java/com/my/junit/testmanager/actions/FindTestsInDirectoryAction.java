@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.my.junit.testmanager.data.SearchType;
 import com.my.junit.testmanager.model.TestClassInfoTableModel;
 import com.my.junit.testmanager.services.TestClassesFinder;
-import com.my.junit.testmanager.ui.TestConfigurations;
+import com.my.junit.testmanager.ui.TestConfigurationsForm;
 import org.jetbrains.annotations.NotNull;
 
 import static com.intellij.openapi.actionSystem.CommonDataKeys.VIRTUAL_FILE;
@@ -35,7 +35,7 @@ public class FindTestsInDirectoryAction extends AnAction {
                     directory
             );
 
-            new TestConfigurations(
+            new TestConfigurationsForm(
                     new TestClassInfoTableModel(directoryTests),
                     project
             ).showAndGet();

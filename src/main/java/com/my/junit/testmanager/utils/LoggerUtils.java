@@ -1,7 +1,7 @@
 package com.my.junit.testmanager.utils;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.my.junit.testmanager.config.TestManagerSettings;
+import com.my.junit.testmanager.config.TestManagerConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -83,7 +83,7 @@ public class LoggerUtils {
      * @return true, если логирование включено; false в противном случае.
      */
     private boolean isLoggingEnabled() {
-        return TestManagerSettings.getInstance().isLoggingEnabled();
+        return TestManagerConfig.getInstance().isLoggingEnabled();
     }
 
 }

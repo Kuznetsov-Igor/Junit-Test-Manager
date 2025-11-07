@@ -1,7 +1,7 @@
 package com.my.junit.testmanager.ui;
 
 import com.intellij.openapi.project.Project;
-import com.my.junit.testmanager.config.data.GroupConfigData;
+import com.my.junit.testmanager.config.data.GroupData;
 import com.my.junit.testmanager.data.TestClassInfoData;
 import com.my.junit.testmanager.model.TestClassInfoTableModel;
 import com.my.junit.testmanager.render.GroupTableCellRenderer;
@@ -19,12 +19,12 @@ import static com.my.junit.testmanager.utils.MessagesBundle.message;
 /**
  * Форма таблицы для генерации конфигураций тестов.
  */
-public class TestConfigurations extends AbstractTableForm<TestClassInfoTableModel> {
-    private final LoggerUtils log = LoggerUtils.getLogger(TestConfigurations.class);
+public class TestConfigurationsForm extends AbstractTableForm<TestClassInfoTableModel> {
+    private final LoggerUtils log = LoggerUtils.getLogger(TestConfigurationsForm.class);
 
     private final Project project;
 
-    public TestConfigurations(
+    public TestConfigurationsForm(
             @NotNull TestClassInfoTableModel model,
             @NotNull Project project
     ) {
@@ -52,7 +52,7 @@ public class TestConfigurations extends AbstractTableForm<TestClassInfoTableMode
                 );
 
         sorter.setComparator(2, (o1, o2) -> {
-            if (o1 instanceof GroupConfigData g1 && o2 instanceof GroupConfigData g2) {
+            if (o1 instanceof GroupData g1 && o2 instanceof GroupData g2) {
                 return g1.getName().compareTo(g2.getName());
             }
             return 0;

@@ -1,6 +1,6 @@
 package com.my.junit.testmanager.model;
 
-import com.my.junit.testmanager.data.TestClassInfoData;
+import com.my.junit.testmanager.config.data.AnnotationsData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -8,17 +8,17 @@ import java.util.List;
 import static com.my.junit.testmanager.utils.MessagesBundle.message;
 
 /**
- * Модель таблицы для отображения информации о тестовых классах.
+ * Модель таблицы для отображения аннотаций.
  */
-public class TestClassInfoTableModel extends AbstractBaseTableModel<TestClassInfoData> {
+public class AnnotationsTableModel extends AbstractBaseTableModel<AnnotationsData> {
 
     private final String[] columnNames = {
-            message("table.column.test.class.name"),
-            message("table.column.path"),
-            message("table.column.group"),
+            message("settings.annotations.table.column.text"),
+            message("settings.annotations.table.column.target"),
+            message("settings.annotations.table.column.imports"),
     };
 
-    public TestClassInfoTableModel(@NotNull List<TestClassInfoData> items) {
+    public AnnotationsTableModel(@NotNull List<AnnotationsData> items) {
         super(items);
     }
 
@@ -29,9 +29,9 @@ public class TestClassInfoTableModel extends AbstractBaseTableModel<TestClassInf
         }
         final var item = items.get(rowIndex);
         return switch (columnIndex) {
-            case 0 -> item.getName();
-            case 1 -> item.getPath();
-            case 2 -> item.getGroup();
+            case 0 -> item.getAnnotationText();
+            case 1 -> item.getImports();
+            case 2 -> item.getTargetType();
             default -> null;
         };
     }
@@ -40,6 +40,5 @@ public class TestClassInfoTableModel extends AbstractBaseTableModel<TestClassInf
     public String[] getColumnNames() {
         return columnNames;
     }
-
 }
 

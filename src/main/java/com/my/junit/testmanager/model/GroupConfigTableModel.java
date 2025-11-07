@@ -1,11 +1,9 @@
 package com.my.junit.testmanager.model;
 
-import com.my.junit.testmanager.config.data.GroupConfigData;
-import com.my.junit.testmanager.config.data.ProfileConfigData;
-import lombok.Getter;
+import com.my.junit.testmanager.config.data.GroupData;
+import com.my.junit.testmanager.config.data.ProfileData;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.table.AbstractTableModel;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,9 +12,8 @@ import static com.my.junit.testmanager.utils.MessagesBundle.message;
 /**
  * Модель таблицы для отображения групп настроек.
  */
-public class GroupConfigTableModel extends AbstractTableModel {
-    @Getter
-    private final List<GroupConfigData> items;
+public class GroupConfigTableModel extends AbstractBaseTableModel<GroupData> {
+
     private final String[] columnNames = {
             message("settings.group.table.column.name"),
             message("settings.group.table.column.regex"),
@@ -25,23 +22,8 @@ public class GroupConfigTableModel extends AbstractTableModel {
             message("settings.group.table.column.profiles")
     };
 
-    public GroupConfigTableModel(@NotNull List<GroupConfigData> items) {
-        this.items = items;
-    }
-
-    @Override
-    public int getRowCount() {
-        return items.size();
-    }
-
-    @Override
-    public int getColumnCount() {
-        return columnNames.length;
-    }
-
-    @Override
-    public String getColumnName(int column) {
-        return columnNames[column];
+    public GroupConfigTableModel(@NotNull List<GroupData> items) {
+        super(items);
     }
 
     @Override
@@ -57,29 +39,15 @@ public class GroupConfigTableModel extends AbstractTableModel {
             case 3 -> item.getHexColor();
             case 4 -> item.getProfiles()
                     .stream()
-                    .map(ProfileConfigData::getName)
+                    .map(ProfileData::getName)
                     .collect(Collectors.joining(", "));
             default -> null;
         };
     }
 
-    public void addRow(@NotNull GroupConfigData item) {
-        items.add(item);
-        fireTableRowsInserted(items.size() - 1, items.size() - 1);
-    }
-
-    public void removeRow(int rowIndex) {
-        if (rowIndex >= 0 && rowIndex < items.size()) {
-            items.remove(rowIndex);
-            fireTableRowsDeleted(rowIndex, rowIndex);
-        }
-    }
-
-    public void updateRow(int rowIndex, @NotNull GroupConfigData item) {
-        if (rowIndex >= 0 && rowIndex < items.size()) {
-            items.set(rowIndex, item);
-            fireTableRowsUpdated(rowIndex, rowIndex);
-        }
+    @Override
+    public String[] getColumnNames() {
+        return columnNames;
     }
 
 }

@@ -4,30 +4,32 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.util.xmlb.XmlSerializerUtil;
-import com.my.junit.testmanager.config.TestManagerSettings;
+import com.my.junit.testmanager.config.TestManagerConfig;
+import com.my.junit.testmanager.config.data.ProfileData;
 import com.my.junit.testmanager.data.Language;
 import com.my.junit.testmanager.model.GroupConfigTableModel;
 import com.my.junit.testmanager.utils.LoggerUtils;
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import static com.my.junit.testmanager.utils.MessagesBundle.message;
 
 /**
  * Конфигурация настроек плагина в настройках IDE.
  */
-public class SettingsConfiguration implements Configurable {
+public class SettingsConfigurationForm implements Configurable {
     private JPanel panel;
     private JLabel languageLabel;
     private JComboBox<String> languageCombo;
     private JCheckBox loggingCheckBox;
     private JLabel activeProfileLabel;
-    private JComboBox<String> profilesCombo;
+    private JComboBox<String> profilesComboBox;
     private JButton addProfileButton;
     private JButton editProfileButton;
     private JButton removeProfileButton;
@@ -37,8 +39,8 @@ public class SettingsConfiguration implements Configurable {
     private JButton removeGroupButton;
 
     private GroupConfigTableModel groupConfigTableModel;
-    private TestManagerSettings currentSettings = new TestManagerSettings();
-    private final LoggerUtils log = LoggerUtils.getLogger(SettingsConfiguration.class);
+    private TestManagerConfig currentSettings = TestManagerConfig.getInstance();
+    private final LoggerUtils log = LoggerUtils.getLogger(SettingsConfigurationForm.class);
 
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
@@ -62,20 +64,8 @@ public class SettingsConfiguration implements Configurable {
         this.addGroupButton.setText(message("button.add"));
         this.editGroupButton.setText(message("button.edit"));
         this.removeGroupButton.setText(message("button.remove"));
+        loadedSettingsData();
 
-        Arrays.stream(Language.values()).forEach(lang ->
-                this.languageCombo.addItem(lang.getDisplayName())
-        );
-        this.languageCombo.setSelectedItem(
-                Language.getLocaleFromDisplay(currentSettings.getLanguageName()).getDisplayName()
-        );
-        currentSettings.getProfiles().forEach(profile ->
-                this.profilesCombo.addItem(profile.getName())
-        );
-        this.profilesCombo.setSelectedItem(currentSettings.getActiveProfile().getName());
-        this.loggingCheckBox.setSelected(currentSettings.isLoggingEnabled());
-        this.groupConfigTableModel = new GroupConfigTableModel(currentSettings.getGroups());
-        this.groupsTable.setModel(groupConfigTableModel);
         this.groupsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         this.addGroupButton.addActionListener(e -> addGroup());
         this.editGroupButton.addActionListener(e -> editGroup());
@@ -89,160 +79,170 @@ public class SettingsConfiguration implements Configurable {
 
     @Override
     public boolean isModified() {
-        return true;
+        final var settings = getSettings();
+        return !this.currentSettings.isStateEquals(settings);
     }
 
     @Override
     public void apply() {
-        final var language = Language.getLocaleFromDisplay((String) languageCombo.getSelectedItem());
-        currentSettings.setLanguageName(language.getDisplayName());
-        currentSettings.setLoggingEnabled(loggingCheckBox.isSelected());
-        currentSettings.setGroups(groupConfigTableModel.getItems());
-        currentSettings.setActiveProfile(
-                currentSettings.getProfiles().stream()
-                        .filter(p -> p.getName().equals(profilesCombo.getSelectedItem()))
-                        .findFirst()
-                        .orElse(null)
-        );
-        final var settings = TestManagerSettings.getInstance();
-
-        XmlSerializerUtil.copyBean(currentSettings, settings);
-        log.logInfo("Settings applied: " + currentSettings);
+        final var settings = getSettings();
+        XmlSerializerUtil.copyBean(settings, this.currentSettings);
+        log.logInfo("Settings applied: " + this.currentSettings);
     }
 
     @Override
     public void reset() {
-        final var settings = TestManagerSettings.getInstance();
-
-        currentSettings = new TestManagerSettings();
-
-        XmlSerializerUtil.copyBean(settings, currentSettings);
-
-        languageCombo.setSelectedItem(currentSettings.getLanguageName());
-        loggingCheckBox.setSelected(currentSettings.isLoggingEnabled());
-
-        updateTableFromSettings();
-        updateProfilesComboFromSettings();
-
-        log.logInfo("Settings reset to: " + currentSettings);
+        loadedSettingsData();
+        log.logInfo("Settings reset to: " + this.currentSettings);
     }
 
     private void addGroup() {
-        final var dialog = new GroupEdit(null);
+        final var dialog = new GroupForm(null);
         if (dialog.showAndGet()) {
             final var newGroup = dialog.getGroup();
-            currentSettings.addGroup(newGroup);
-            groupConfigTableModel.addRow(newGroup);
+            this.groupConfigTableModel.addRow(newGroup);
             log.logInfo("New group added: " + newGroup);
         }
     }
 
     private void editGroup() {
-        int selectedRow = groupsTable.getSelectedRow();
+        int selectedRow = this.groupsTable.getSelectedRow();
         if (selectedRow == -1) {
             log.logInfo("Edit group attempted with no selection.");
             return;
         }
-        final var existing = currentSettings.getGroups().get(selectedRow);
-        final var dialog = new GroupEdit(existing);
+        final var existing = this.groupConfigTableModel.getItems().get(selectedRow);
+        final var dialog = new GroupForm(existing);
         if (dialog.showAndGet()) {
             final var updated = dialog.getGroup();
-            currentSettings.updateGroup(selectedRow, updated);
-            groupConfigTableModel.updateRow(selectedRow, updated);
+            this.groupConfigTableModel.updateRow(selectedRow, updated);
             log.logInfo("Group updated at row " + selectedRow + ": " + updated);
         }
     }
 
     private void removeGroup() {
-        int selectedRow = groupsTable.getSelectedRow();
+        int selectedRow = this.groupsTable.getSelectedRow();
         if (selectedRow == -1) {
             log.logInfo("Remove group attempted with no selection.");
             return;
         }
-        final var toRemove = currentSettings.getGroups().get(selectedRow);
-        currentSettings.removeGroup(toRemove);
-        groupConfigTableModel.removeRow(selectedRow);
+        final var toRemove = this.groupConfigTableModel.getItems().get(selectedRow);
+        this.groupConfigTableModel.removeRow(selectedRow);
         log.logInfo("Group removed at row " + selectedRow + ": " + toRemove);
     }
 
-    private void updateTableFromSettings() {
-        groupConfigTableModel = new GroupConfigTableModel(new ArrayList<>(currentSettings.getGroups()));
-        groupsTable.setModel(groupConfigTableModel);
-    }
-
     private void addProfile() {
-        final var dialog = new ProfileEdit(null);
+        final var dialog = new ProfileForm(null);
         if (dialog.showAndGet()) {
             final var newProfile = dialog.getProfileConfigData();
-            currentSettings.addProfile(newProfile);
-            updateProfilesComboFromSettings();
+            if (newProfile.getName().equals(ProfileData.DEFAULT.getName())) {
+                return;
+            }
+            this.profilesComboBox.addItem(newProfile.getName());
             log.logInfo("New profile added: " + newProfile);
         }
     }
 
     private void editProfile() {
-        final var selectedName = (String) profilesCombo.getSelectedItem();
-        if (selectedName == null) {
+        final var selectedName = (String) this.profilesComboBox.getSelectedItem();
+        if (selectedName == null || selectedName.equals(ProfileData.DEFAULT.getName())) {
             log.logInfo("Edit profile attempted with no selection.");
             return;
         }
-        final var existing = currentSettings.getProfiles().stream()
-                .filter(p -> p.getName().equals(selectedName))
-                .findFirst()
-                .orElse(null);
-        if (existing == null) {
-            log.logInfo("Edit profile attempted but profile not found: " + selectedName);
-            return;
-        }
-        final var dialog = new ProfileEdit(existing);
+        final var oldProfile = ProfileData.of(selectedName);
+        final var dialog = new ProfileForm(oldProfile);
         if (dialog.showAndGet()) {
             final var updated = dialog.getProfileConfigData();
-            currentSettings.updateProfile(existing, updated);
-            updateProfilesComboFromSettings();
+
+            this.profilesComboBox.removeItem(selectedName);
+            this.profilesComboBox.addItem(updated.getName());
+            updateProfileToUpdateGroups(oldProfile, updated);
+
             log.logInfo("Profile updated: " + updated);
         }
     }
 
     private void removeProfile() {
-        final var selectedName = (String) profilesCombo.getSelectedItem();
-        if (selectedName == null) {
+        final var selectedName = (String) this.profilesComboBox.getSelectedItem();
+        if (selectedName == null || selectedName.equals(ProfileData.DEFAULT.getName())) {
             log.logInfo("Remove profile attempted with no selection.");
             return;
         }
-        final var toRemove = currentSettings.getProfiles()
+        this.profilesComboBox.removeItem(selectedName);
+        removeProfileToUpdateGroups(ProfileData.of(selectedName));
+        log.logInfo("Profile removed: " + selectedName);
+    }
+
+    private void updateProfileToUpdateGroups(@NotNull ProfileData oldProfile, @NotNull ProfileData newProfile) {
+        this.groupConfigTableModel.getItems()
                 .stream()
-                .filter(p -> p.getName().equals(selectedName))
-                .findFirst()
-                .orElse(null);
+                .filter(group -> group.getProfiles()
+                        .stream()
+                        .anyMatch(profile -> profile.getName().equals(oldProfile.getName())))
+                .forEach(group -> {
+                    group.removeProfile(oldProfile);
+                    group.addProfile(newProfile);
+                });
+        this.groupConfigTableModel.fireTableDataChanged();
 
-        if (toRemove == null) {
-            log.logInfo("Remove profile attempted but profile not found: " + selectedName);
-            return;
-        }
-        currentSettings.removeProfile(toRemove);
-        if (currentSettings.getActiveProfile() != null && currentSettings.getActiveProfile().equals(toRemove)) {
-            log.logInfo("Active profile removed, clearing active profile.");
-            currentSettings.setActiveProfile(null);
-        }
-        updateProfilesComboFromSettings();
-        log.logInfo("Profile removed: " + toRemove);
     }
 
-    private void updateProfilesComboFromSettings() {
-        profilesCombo.removeAllItems();
-        for (var profile : currentSettings.getProfiles()) {
-            profilesCombo.addItem(profile.getName());
-        }
-        if (currentSettings.getActiveProfile() != null) {
-            profilesCombo.setSelectedItem(currentSettings.getActiveProfile().getName());
-        } else {
-            profilesCombo.setSelectedIndex(-1);
-        }
-        updateGroupUI();
+    private void removeProfileToUpdateGroups(@NotNull ProfileData oldProfile) {
+        this.groupConfigTableModel.getItems()
+                .stream()
+                .filter(group -> group.getProfiles()
+                        .stream()
+                        .anyMatch(profile -> profile.getName().equals(oldProfile.getName())))
+                .forEach(group -> group.removeProfile(oldProfile));
+        this.groupConfigTableModel.fireTableDataChanged();
     }
 
-    private void updateGroupUI() {
-        groupConfigTableModel.fireTableRowsUpdated(0, groupConfigTableModel.getRowCount() - 1);
+    private void loadedSettingsData() {
+        this.languageCombo.removeAllItems();
+
+        Arrays.stream(Language.values()).forEach(lang ->
+                this.languageCombo.addItem(lang.getDisplayName())
+        );
+
+        this.languageCombo.setSelectedItem(
+                Language.getLocaleFromDisplay(this.currentSettings.getLanguageName()).getDisplayName()
+        );
+
+        this.profilesComboBox.removeAllItems();
+
+        this.currentSettings.getProfiles().forEach(profile ->
+                this.profilesComboBox.addItem(profile.getName())
+        );
+        this.profilesComboBox.setSelectedItem(currentSettings.getActiveProfile().getName());
+        this.loggingCheckBox.setSelected(currentSettings.isLoggingEnabled());
+        this.groupConfigTableModel = new GroupConfigTableModel(currentSettings.getGroups());
+        this.groupsTable.setModel(groupConfigTableModel);
+
+        log.logInfo("Settings data loaded into UI." + this.currentSettings);
+    }
+
+    @NotNull
+    private TestManagerConfig getSettings() {
+        final var settings = new TestManagerConfig();
+
+        final var language = Language.getLocaleFromDisplay((String) this.languageCombo.getSelectedItem());
+        final var selectedProfiles = (String) this.profilesComboBox.getSelectedItem();
+        var profiles = IntStream.range(0, profilesComboBox.getItemCount())
+                .mapToObj(profilesComboBox::getItemAt)
+                .map(ProfileData::of)
+                .toList();
+
+        settings.setLanguageName(language.getDisplayName());
+        settings.setLoggingEnabled(this.loggingCheckBox.isSelected());
+        settings.setGroups(this.groupConfigTableModel.getItems());
+        settings.setProfiles(profiles);
+        settings.setActiveProfile(
+                settings.getProfiles().stream()
+                        .filter(p -> p.getName().equals(selectedProfiles))
+                        .findFirst()
+                        .orElse(null)
+        );
+        return settings;
     }
 
     {
@@ -297,8 +297,8 @@ public class SettingsConfiguration implements Configurable {
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,
                         0, false));
-        profilesCombo = new JComboBox();
-        panel3.add(profilesCombo,
+        profilesComboBox = new JComboBox();
+        panel3.add(profilesComboBox,
                 new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null,

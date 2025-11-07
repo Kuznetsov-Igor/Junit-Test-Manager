@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.my.junit.testmanager.data.SearchType;
 import com.my.junit.testmanager.model.TestClassInfoTableModel;
 import com.my.junit.testmanager.services.TestClassesFinder;
-import com.my.junit.testmanager.ui.TestConfigurations;
+import com.my.junit.testmanager.ui.TestConfigurationsForm;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -25,7 +25,7 @@ public class FindAllTestsAction extends AnAction {
                 null
         );
 
-        new TestConfigurations(
+        new TestConfigurationsForm(
                 new TestClassInfoTableModel(allTests),
                 project
         ).showAndGet();

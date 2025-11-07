@@ -3,7 +3,7 @@ package com.my.junit.testmanager.ui;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.my.junit.testmanager.config.data.ProfileConfigData;
+import com.my.junit.testmanager.config.data.ProfileData;
 import com.my.junit.testmanager.utils.LoggerUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,14 +16,14 @@ import static com.my.junit.testmanager.utils.MessagesBundle.message;
 /**
  * Диалоговое окно для добавления или редактирования профиля.
  */
-public class ProfileEdit extends DialogWrapper {
+public class ProfileForm extends DialogWrapper {
     private JPanel table;
     private JLabel labelName;
     private JTextField nameField;
-    private final ProfileConfigData existingGroup;
-    private final LoggerUtils log = LoggerUtils.getLogger(ProfileEdit.class);
+    private final ProfileData existingGroup;
+    private final LoggerUtils log = LoggerUtils.getLogger(ProfileForm.class);
 
-    public ProfileEdit(@Nullable ProfileConfigData existing) {
+    public ProfileForm(@Nullable ProfileData existing) {
         super(true);
         this.existingGroup = existing;
         setTitle(existing == null ? message("dialog.title.add") : message("dialog.title.edit"));
@@ -42,8 +42,8 @@ public class ProfileEdit extends DialogWrapper {
         return this.table;
     }
 
-    public ProfileConfigData getProfileConfigData() {
-        return ProfileConfigData.of(
+    public ProfileData getProfileConfigData() {
+        return ProfileData.of(
                 this.nameField.getText()
         );
     }

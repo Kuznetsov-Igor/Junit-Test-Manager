@@ -3,9 +3,9 @@ package com.my.junit.testmanager.ui;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.my.junit.testmanager.config.TestManagerSettings;
-import com.my.junit.testmanager.config.data.GroupConfigData;
-import com.my.junit.testmanager.config.data.ProfileConfigData;
+import com.my.junit.testmanager.config.TestManagerConfig;
+import com.my.junit.testmanager.config.data.GroupData;
+import com.my.junit.testmanager.config.data.ProfileData;
 import com.my.junit.testmanager.utils.LoggerUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +23,7 @@ import static javax.swing.BorderFactory.createTitledBorder;
 /**
  * Диалоговое окно для добавления и редактирования групп профилей.
  */
-public class GroupEdit extends DialogWrapper {
+public class GroupForm extends DialogWrapper {
     private JTextField textFieldName;
     private JLabel labelName;
     private JLabel labelRegex;
@@ -42,13 +42,13 @@ public class GroupEdit extends DialogWrapper {
     private JColorChooser colorChooser;
     private JPanel panel;
 
-    private DefaultListModel<ProfileConfigData> availableModel;
-    private DefaultListModel<ProfileConfigData> selectedModel;
-    private GroupConfigData existingGroup;
+    private DefaultListModel<ProfileData> availableModel;
+    private DefaultListModel<ProfileData> selectedModel;
+    private GroupData existingGroup;
 
-    private final LoggerUtils log = LoggerUtils.getLogger(GroupEdit.class);
+    private final LoggerUtils log = LoggerUtils.getLogger(GroupForm.class);
 
-    public GroupEdit(@Nullable GroupConfigData existing) {
+    public GroupForm(@Nullable GroupData existing) {
         super(true);
         this.existingGroup = existing;
         setTitle(existing == null ? message("dialog.title.add") : message("dialog.title.edit"));
@@ -83,13 +83,13 @@ public class GroupEdit extends DialogWrapper {
             this.colorChooser.setColor(Color.BLUE);
         }
 
-        final var allProfiles = TestManagerSettings.getInstance().getProfiles();
+        final var allProfiles = TestManagerConfig.getInstance().getProfiles();
 
         this.availableModel = new DefaultListModel<>();
         this.selectedModel = new DefaultListModel<>();
 
         final var selectedProfiles = this.existingGroup != null ? new ArrayList<>(this.existingGroup.getProfiles())
-                : new ArrayList<ProfileConfigData>();
+                : new ArrayList<ProfileData>();
         for (var profile : allProfiles) {
             if (selectedProfiles.contains(profile)) {
                 this.selectedModel.addElement(profile);
@@ -114,9 +114,9 @@ public class GroupEdit extends DialogWrapper {
     }
 
     private void moveProfiles(
-            @NotNull JList<ProfileConfigData> fromList,
-            @NotNull DefaultListModel<ProfileConfigData> fromModel,
-            @NotNull DefaultListModel<ProfileConfigData> toModel
+            @NotNull JList<ProfileData> fromList,
+            @NotNull DefaultListModel<ProfileData> fromModel,
+            @NotNull DefaultListModel<ProfileData> toModel
     ) {
         int[] selectedIndices = fromList.getSelectedIndices();
         if (selectedIndices.length == 0) {
@@ -131,13 +131,13 @@ public class GroupEdit extends DialogWrapper {
         }
     }
 
-    public GroupConfigData getGroup() {
-        List<ProfileConfigData> selectedProfiles = new ArrayList<>();
+    public GroupData getGroup() {
+        List<ProfileData> selectedProfiles = new ArrayList<>();
         for (int i = 0; i < this.selectedModel.getSize(); i++) {
             selectedProfiles.add(this.selectedModel.getElementAt(i));
         }
 
-        final var group = GroupConfigData.of(
+        final var group = GroupData.of(
                 this.textFieldName.getText(),
                 this.textFieldRegex.getText(),
                 this.textFieldVmArg.getText(),

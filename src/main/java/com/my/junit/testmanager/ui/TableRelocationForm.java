@@ -21,12 +21,12 @@ import static com.my.junit.testmanager.utils.PsiUtils.openPsiClassForEditor;
 /**
  * Форма таблицы для релокации тестовых классов.
  */
-public class TableRelocation extends AbstractTableForm<TestClassRelocationTableModel> {
-    private final LoggerUtils log = LoggerUtils.getLogger(TableRelocation.class);
+public class TableRelocationForm extends AbstractTableForm<TestClassRelocationTableModel> {
+    private final LoggerUtils log = LoggerUtils.getLogger(TableRelocationForm.class);
 
     private final Project project;
 
-    public TableRelocation(
+    public TableRelocationForm(
             @NotNull TestClassRelocationTableModel model,
             @NotNull Project project
     ) {

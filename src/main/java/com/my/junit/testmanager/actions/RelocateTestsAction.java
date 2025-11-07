@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.my.junit.testmanager.data.SearchType;
 import com.my.junit.testmanager.model.TestClassRelocationTableModel;
 import com.my.junit.testmanager.services.RelocationAnalyzer;
-import com.my.junit.testmanager.ui.TableRelocation;
+import com.my.junit.testmanager.ui.TableRelocationForm;
 import com.my.junit.testmanager.utils.MessagesDialogUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,7 +32,7 @@ public class RelocateTestsAction extends AnAction {
             );
             return;
         }
-        new TableRelocation(
+        new TableRelocationForm(
                 new TestClassRelocationTableModel(items),
                 project
         ).showAndGet();
