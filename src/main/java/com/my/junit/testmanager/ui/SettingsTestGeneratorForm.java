@@ -78,9 +78,6 @@ public class SettingsTestGeneratorForm implements Configurable {
         this.textFieldGeneratorClassMethodName.setText(testGeneratorSettings.getGeneratorMethodName());
         this.textFieldGeneratorClassName.setText(testGeneratorSettings.getGeneratorClassName());
 
-        // Update border texts for panels (they are set in $$$setupUI$$$() with hardcoded strings)
-        updatePanelBorders();
-
         log.logInfo("Create Settings Test Generator UI component");
         return table;
     }
@@ -146,87 +143,6 @@ public class SettingsTestGeneratorForm implements Configurable {
             this.factoryMethodTableModel.removeRow(selectedRow);
             log.logInfo("Removed factory method data: " + data);
         }
-    }
-
-
-    /**
-     * Обновляет тексты border'ов для панелей, которые были установлены в $$$setupUI$$$() с захардкоженными строками.
-     */
-    private void updatePanelBorders() {
-        // Находим панель с таблицей аннотаций и обновляем её border
-        // Таблица находится внутри JScrollPane, который находится внутри панели
-        final var annotationScrollPane = findScrollPaneContainingComponent(this.table, this.tableAnnotations);
-        if (annotationScrollPane != null) {
-            final var annotationPanel = findPanelContainingComponent(this.table, annotationScrollPane);
-            if (annotationPanel != null && annotationPanel.getBorder() instanceof TitledBorder) {
-                annotationPanel.setBorder(BorderFactory.createTitledBorder(
-                        null,
-                        message("settings.annotations.table.column.text"),
-                        TitledBorder.DEFAULT_JUSTIFICATION,
-                        TitledBorder.DEFAULT_POSITION,
-                        null,
-                        null
-                ));
-            }
-        }
-
-        // Находим панель с таблицей фабрик и обновляем её border
-        final var factoryScrollPane = findScrollPaneContainingComponent(this.table, this.tableFactories);
-        if (factoryScrollPane != null) {
-            final var factoryPanel = findPanelContainingComponent(this.table, factoryScrollPane);
-            if (factoryPanel != null && factoryPanel.getBorder() instanceof TitledBorder) {
-                factoryPanel.setBorder(BorderFactory.createTitledBorder(
-                        null,
-                        message("settings.factory.method.table.column.class"),
-                        TitledBorder.DEFAULT_JUSTIFICATION,
-                        TitledBorder.DEFAULT_POSITION,
-                        null,
-                        null
-                ));
-            }
-        }
-    }
-
-    /**
-     * Рекурсивно находит JScrollPane, содержащий указанный компонент.
-     */
-    private JScrollPane findScrollPaneContainingComponent(Container parent, Component target) {
-        if (parent == null || target == null) {
-            return null;
-        }
-        for (Component comp : parent.getComponents()) {
-            if (comp == target) {
-                return parent instanceof JScrollPane ? (JScrollPane) parent : null;
-            }
-            if (comp instanceof Container) {
-                final var found = findScrollPaneContainingComponent((Container) comp, target);
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Рекурсивно находит панель, содержащую указанный компонент.
-     */
-    private JPanel findPanelContainingComponent(Container parent, Component target) {
-        if (parent == null || target == null) {
-            return null;
-        }
-        for (Component comp : parent.getComponents()) {
-            if (comp == target) {
-                return parent instanceof JPanel ? (JPanel) parent : null;
-            }
-            if (comp instanceof Container) {
-                final var found = findPanelContainingComponent((Container) comp, target);
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-        return null;
     }
 
     private TestGeneratorConfig getSettings() {
