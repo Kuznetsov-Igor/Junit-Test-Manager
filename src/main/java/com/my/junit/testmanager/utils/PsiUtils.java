@@ -20,7 +20,6 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.PsiShortNamesCache;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.refactoring.JavaRefactoringFactory;
-import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaSourceRootType;
 
@@ -32,8 +31,8 @@ import java.util.stream.Stream;
 
 /**
  * Утилитарный класс для работы с PSI элементами.
+ * Содержит обобщенные методы для работы с классами, пакетами и поиска в проекте.
  */
-@RequiredArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class PsiUtils {
     private static final LoggerUtils log = LoggerUtils.getLogger(PsiUtils.class);
 
@@ -48,8 +47,7 @@ public class PsiUtils {
     public static List<PsiClass> findClassesByName(@NotNull Project project, @NotNull String className) {
         final var cache = PsiShortNamesCache.getInstance(project);
         final var allClasses = cache.getClassesByName(className, GlobalSearchScope.allScope(project));
-        return Arrays.stream(allClasses)
-                .toList();
+        return Arrays.asList(allClasses);
     }
 
 
@@ -91,7 +89,7 @@ public class PsiUtils {
 
                     final var psiFile = psiManager.findFile(virtualFile);
                     if (psiFile instanceof PsiJavaFile javaFile) {
-                        psiClasses.addAll(List.of(javaFile.getClasses()));
+                        psiClasses.addAll(Arrays.asList(javaFile.getClasses()));
                     }
                 }
             }
@@ -160,7 +158,7 @@ public class PsiUtils {
 
         for (var file : directory.getFiles()) {
             if (file instanceof PsiJavaFile javaFile) {
-                psiClasses.addAll(List.of(javaFile.getClasses()));
+                psiClasses.addAll(Arrays.asList(javaFile.getClasses()));
             }
         }
 
@@ -206,33 +204,6 @@ public class PsiUtils {
         return false;
     }
 
-    /**
-     * Проверка, совпадают ли пакеты у двух FQCN.
-     *
-     * @param classFqcn Класс FQCN.
-     * @param testFqcn  Тестовый FQCN.
-     * @return true, если пакеты совпадают, иначе false.
-     */
-    public static boolean isPackageMatching(@NotNull String classFqcn, @NotNull String testFqcn) {
-        final var classPackage = extractPackageFromFqcn(classFqcn);
-        final var testPackage = extractPackageFromFqcn(testFqcn);
-        log.logInfo("Comparing packages - Class: " + classPackage + ", Test: " + testPackage);
-        return Objects.equals(classPackage, testPackage);
-    }
-
-    /**
-     * Вычисление нового FQCN для теста при несовпадении пакетов.
-     *
-     * @param classFqcn Класс FQCN.
-     * @param testName  Имя теста.
-     * @return Новый FQCN для теста.
-     */
-    @NotNull
-    public static String calculateNewTestFqcnForMismatch(@NotNull String classFqcn, @NotNull String testName) {
-        log.logInfo("Calculating new FQCN for test: " + testName + " based on class FQCN: " + classFqcn);
-        final var classPackage = extractPackageFromFqcn(classFqcn);
-        return classPackage.isEmpty() ? testName : classPackage;
-    }
 
     /**
      * Извлечение пакета из полного имени класса (FQCN).
@@ -280,29 +251,63 @@ public class PsiUtils {
 
     /**
      * Проверка, является ли указанный PsiClass тестовым классом.
+     * Проверяет наличие тестовых аннотаций, наследование от TestCase или имя, заканчивающееся на "Test".
      *
      * @param psiClass PsiClass для проверки.
      * @return true, если PsiClass является тестовым классом, иначе false.
      */
     public static boolean isTestClass(@NotNull PsiClass psiClass) {
+        // Проверка на тестовые аннотации (JUnit 4, JUnit 5, TestNG)
+        if (hasTestAnnotation(psiClass)) {
+            return true;
+        }
 
-        boolean hasTestAnnotation = PsiTreeUtil.findChildrenOfType(psiClass, PsiAnnotation.class)
-                .stream()
-                .anyMatch(annotation -> {
-                    final var qualifiedName = annotation.getQualifiedName();
-                    return (qualifiedName != null && qualifiedName.contains("Test"));
-                });
+        // Проверка на наследование от TestCase (JUnit 3)
+        if (inheritsFromTestCase(psiClass)) {
+            return true;
+        }
 
-        boolean inheritsFromTestCase = Stream.of(psiClass.getSupers())
-                .anyMatch(superClass -> "junit.framework.TestCase".equals(superClass.getQualifiedName()));
-
-        boolean nameEndsWithTest = psiClass.getName() != null && psiClass.getName().endsWith("Test");
-
-        return hasTestAnnotation || inheritsFromTestCase || nameEndsWithTest;
+        // Проверка имени класса (заканчивается на "Test")
+        final var className = psiClass.getName();
+        return className != null && className.endsWith("Test");
     }
 
     /**
-     * Открытие редактора файла для указанного PsiClass.
+     * Проверяет наличие тестовых аннотаций в классе.
+     *
+     * @param psiClass класс для проверки
+     * @return true, если найдена тестовая аннотация
+     */
+    private static boolean hasTestAnnotation(@NotNull PsiClass psiClass) {
+        return PsiTreeUtil.findChildrenOfType(psiClass, PsiAnnotation.class)
+                .stream()
+                .anyMatch(annotation -> {
+                    final var qualifiedName = annotation.getQualifiedName();
+                    if (qualifiedName == null) {
+                        return false;
+                    }
+                    // Проверяем стандартные тестовые аннотации
+                    return qualifiedName.equals("org.junit.Test") ||
+                           qualifiedName.equals("org.junit.jupiter.api.Test") ||
+                           qualifiedName.equals("org.testng.annotations.Test") ||
+                           qualifiedName.contains("Test");
+                });
+    }
+
+    /**
+     * Проверяет, наследуется ли класс от TestCase (JUnit 3).
+     *
+     * @param psiClass класс для проверки
+     * @return true, если класс наследуется от TestCase
+     */
+    private static boolean inheritsFromTestCase(@NotNull PsiClass psiClass) {
+        return Stream.of(psiClass.getSupers())
+                .anyMatch(superClass -> "junit.framework.TestCase".equals(superClass.getQualifiedName()));
+    }
+
+
+    /**
+     * Открывает редактор файла для указанного PsiClass.
      *
      * @param project  проект IntelliJ IDEA.
      * @param psiClass PsiClass для открытия в редакторе.
@@ -313,13 +318,15 @@ public class PsiUtils {
     ) {
         log.logInfo("Opening file editor for class: " + psiClass.getQualifiedName());
         try {
+            final var containingFile = psiClass.getContainingFile();
+            if (containingFile == null || containingFile.getVirtualFile() == null) {
+                log.logWarn("Cannot open editor: file or virtual file is null for class: " + psiClass.getQualifiedName());
+                return;
+            }
             FileEditorManager.getInstance(project)
-                    .openFile(
-                            psiClass.getContainingFile()
-                                    .getVirtualFile(),
-                            true
-                    );
+                    .openFile(containingFile.getVirtualFile(), true);
         } catch (Exception e) {
+            log.logError("Error opening file editor for class: " + psiClass.getQualifiedName(), e);
             MessagesDialogUtils.messageError(
                     project,
                     MessagesBundle.message(
@@ -331,7 +338,7 @@ public class PsiUtils {
     }
 
     /**
-     * Перемещение указанного PsiClass в целевой пакет.
+     * Перемещает указанный PsiClass в целевой пакет.
      *
      * @param project       проект IntelliJ IDEA.
      * @param element       PsiElement (класс) для перемещения.
@@ -342,13 +349,14 @@ public class PsiUtils {
             @NotNull PsiElement element,
             @NotNull String targetPackage
     ) {
+        log.logInfo("Moving class to package: " + targetPackage);
         final var refactoringFactory = JavaRefactoringFactory.getInstance(project);
         ApplicationManager.getApplication().runWriteAction(() -> {
             try {
                 final var moveDestination =
                         refactoringFactory.createSourceFolderPreservingMoveDestination(targetPackage);
                 final var refactoring = refactoringFactory.createMoveClassesOrPackages(
-                        new PsiElement[]{ element },
+                        new PsiElement[]{element},
                         moveDestination,
                         false,
                         true
@@ -361,6 +369,8 @@ public class PsiUtils {
         });
     }
 
+    private static final String JAVA_LANG_RECORD = "java.lang.Record";
+
     /**
      * Проверяет, является ли заданный PsiClass record'ом (с Java 14+).
      *
@@ -372,7 +382,6 @@ public class PsiUtils {
             return false;
         }
         var superClass = clazz.getSuperClass();
-        return superClass != null && "java.lang.Record".equals(superClass.getQualifiedName());
+        return superClass != null && JAVA_LANG_RECORD.equals(superClass.getQualifiedName());
     }
-
 }

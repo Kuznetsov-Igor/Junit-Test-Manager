@@ -12,29 +12,29 @@ public class NotificationUtils {
             .getNotificationGroup("JUnitTestManagerNotifications");
 
     /**
-     * Показать информационное уведомление
+     * Показать информационное уведомление.
      *
      * @param message текст сообщения
      */
     public static void showInfoNotification(@NotNull String message) {
-        NOTIFICATION_GROUP.createNotification(message, NotificationType.INFORMATION);
+        NOTIFICATION_GROUP.createNotification(message, NotificationType.INFORMATION).notify(null);
     }
 
     /**
-     * Показать предупреждающее уведомление
+     * Показать предупреждающее уведомление.
      *
      * @param message текст сообщения
      */
     public static void showWarningNotification(@NotNull String message) {
-        NOTIFICATION_GROUP.createNotification(message, NotificationType.WARNING);
+        NOTIFICATION_GROUP.createNotification(message, NotificationType.WARNING).notify(null);
     }
 
     /**
-     * Показать уведомление об ошибке
+     * Показать уведомление об ошибке.
      *
      * @param message текст сообщения
      */
     public static void showErrorNotification(@NotNull String message) {
-        NOTIFICATION_GROUP.createNotification(message, NotificationType.ERROR);
+        NOTIFICATION_GROUP.createNotification(message, NotificationType.ERROR).notify(null);
     }
 }

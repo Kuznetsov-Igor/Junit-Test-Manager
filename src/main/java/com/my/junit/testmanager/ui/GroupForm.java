@@ -1,6 +1,7 @@
 package com.my.junit.testmanager.ui;
 
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.my.junit.testmanager.config.TestManagerConfig;
@@ -16,6 +17,8 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import static com.my.junit.testmanager.utils.MessagesBundle.message;
 import static javax.swing.BorderFactory.createTitledBorder;
@@ -64,7 +67,7 @@ public class GroupForm extends DialogWrapper {
         this.labelRegex.setToolTipText(message("settings.group.label.regex.tooltip"));
 
         this.labelVmArg.setText(message("settings.group.label.vmArgs"));
-        this.labelName.setToolTipText(message("settings.group.label.vmArgs.tooltip"));
+        this.labelVmArg.setToolTipText(message("settings.group.label.vmArgs.tooltip"));
 
         this.labelColor.setText(message("settings.group.label.color"));
         this.labelColor.setToolTipText(message("settings.group.label.color.tooltip"));
@@ -129,6 +132,29 @@ public class GroupForm extends DialogWrapper {
             fromModel.removeElementAt(selectedIndices[i]);
             toModel.addElement(profile);
         }
+    }
+
+    @Nullable
+    @Override
+    protected ValidationInfo doValidate() {
+        final var name = this.textFieldName.getText().trim();
+        if (name.isEmpty()) {
+            return new ValidationInfo(message("validation.error.group.name.empty"), this.textFieldName);
+        }
+
+        final var regex = this.textFieldRegex.getText().trim();
+        if (!regex.isEmpty()) {
+            try {
+                Pattern.compile(regex);
+            } catch (PatternSyntaxException e) {
+                return new ValidationInfo(
+                        message("validation.error.regex.invalid", e.getMessage()),
+                        this.textFieldRegex
+                );
+            }
+        }
+
+        return null;
     }
 
     public GroupData getGroup() {

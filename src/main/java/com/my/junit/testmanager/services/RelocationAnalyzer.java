@@ -101,37 +101,115 @@ public class RelocationAnalyzer {
         }
 
         final var expectedTestName = className + "Test";
-        final var allTestClasses = PsiUtils.findClassesByName(project, expectedTestName)
+        final var testClasses = findTestClassesForRelocation(expectedTestName);
+
+        return findMismatchedTestClass(testClasses, psiClass, expectedTestName);
+    }
+
+    /**
+     * Находит тестовые классы с заданным именем в тестовых исходниках.
+     *
+     * @param testName имя тестового класса
+     * @return список тестовых классов
+     */
+    @NotNull
+    private List<PsiClass> findTestClassesForRelocation(@NotNull String testName) {
+        return PsiUtils.findClassesByName(project, testName)
                 .stream()
-                .filter(testClass -> PsiUtils.isInTestSourceRoot(
-                        testClass,
-                        project
-                ))
+                .filter(testClass -> PsiUtils.isInTestSourceRoot(testClass, project))
                 .toList();
+    }
 
-        for (var testClass : allTestClasses) {
-            if (PsiUtils.hasImportOnClass(testClass, psiClass)) {
-                log.logInfo(
-                        "Found test class: " + testClass.getQualifiedName()
-                                + " for class: " + psiClass.getQualifiedName()
-                );
-                final var testFqcn = testClass.getQualifiedName();
-                final var classFqcn = psiClass.getQualifiedName();
+    /**
+     * Находит тестовый класс с несоответствующим пакетом для релокации.
+     *
+     * @param testClasses список тестовых классов для проверки
+     * @param sourceClass исходный класс
+     * @param expectedTestName ожидаемое имя тестового класса
+     * @return данные о релокации или null, если несоответствия не найдены
+     */
+    @Nullable
+    private TestClassRelocationData findMismatchedTestClass(
+            @NotNull List<PsiClass> testClasses,
+            @NotNull PsiClass sourceClass,
+            @NotNull String expectedTestName
+    ) {
+        final var classFqcn = sourceClass.getQualifiedName();
+        if (classFqcn == null) {
+            return null;
+        }
 
-                if (testFqcn != null && classFqcn != null && !PsiUtils.isPackageMatching(classFqcn, testFqcn)) {
-                    log.logInfo("Found test class with mismatched package: " + testFqcn + " for class: " + classFqcn);
+        for (var testClass : testClasses) {
+            if (!PsiUtils.hasImportOnClass(testClass, sourceClass)) {
+                continue;
+            }
 
-                    final var newTestFqcn = PsiUtils.calculateNewTestFqcnForMismatch(classFqcn, expectedTestName);
+            final var testFqcn = testClass.getQualifiedName();
+            if (testFqcn == null) {
+                continue;
+            }
 
-                    return TestClassRelocationData.of(
-                            expectedTestName,
-                            PsiUtils.extractPackageFromFqcn(testFqcn),
-                            newTestFqcn,
-                            testClass
-                    );
-                }
+            log.logInfo("Found test class: " + testFqcn + " for class: " + classFqcn);
+
+            if (!isPackageMatching(classFqcn, testFqcn)) {
+                log.logInfo("Found test class with mismatched package: " + testFqcn + " for class: " + classFqcn);
+                return createRelocationData(testFqcn, classFqcn, expectedTestName, testClass);
             }
         }
         return null;
+    }
+
+    /**
+     * Создает данные о релокации для тестового класса.
+     *
+     * @param testFqcn полное имя тестового класса
+     * @param classFqcn полное имя исходного класса
+     * @param expectedTestName ожидаемое имя тестового класса
+     * @param testClass тестовый класс
+     * @return данные о релокации
+     */
+    @NotNull
+    private TestClassRelocationData createRelocationData(
+            @NotNull String testFqcn,
+            @NotNull String classFqcn,
+            @NotNull String expectedTestName,
+            @NotNull PsiClass testClass
+    ) {
+        final var newTestFqcn = calculateNewTestFqcnForMismatch(classFqcn, expectedTestName);
+        return TestClassRelocationData.of(
+                expectedTestName,
+                PsiUtils.extractPackageFromFqcn(testFqcn),
+                newTestFqcn,
+                testClass
+        );
+    }
+
+    /**
+     * Проверяет, совпадают ли пакеты у двух FQCN.
+     *
+     * @param classFqcn FQCN класса.
+     * @param testFqcn  FQCN тестового класса.
+     * @return true, если пакеты совпадают, иначе false.
+     */
+    private boolean isPackageMatching(@NotNull String classFqcn, @NotNull String testFqcn) {
+        final var classPackage = PsiUtils.extractPackageFromFqcn(classFqcn);
+        final var testPackage = PsiUtils.extractPackageFromFqcn(testFqcn);
+        log.logInfo("Comparing packages - Class: " + classPackage + ", Test: " + testPackage);
+        return classPackage.equals(testPackage);
+    }
+
+    /**
+     * Вычисляет новый FQCN для теста при несовпадении пакетов.
+     * Исправляет пакет теста, чтобы он соответствовал пакету исходного класса.
+     *
+     * @param classFqcn FQCN исходного класса.
+     * @param testName  имя тестового класса.
+     * @return новый FQCN для теста (package.className).
+     */
+    @NotNull
+    private String calculateNewTestFqcnForMismatch(@NotNull String classFqcn, @NotNull String testName) {
+        log.logInfo("Calculating new FQCN for test: " + testName + " based on class FQCN: " + classFqcn);
+        final var classPackage = PsiUtils.extractPackageFromFqcn(classFqcn);
+        return classPackage.isEmpty() ? testName : classPackage + "." + testName;
     }
 }

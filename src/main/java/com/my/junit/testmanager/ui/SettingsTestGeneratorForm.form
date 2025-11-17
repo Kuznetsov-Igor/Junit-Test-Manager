@@ -135,7 +135,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="1b02" class="javax.swing.JTable" binding="tableFactorys">
+                  <component id="1b02" class="javax.swing.JTable" binding="tableFactories">
                     <constraints/>
                     <properties/>
                   </component>

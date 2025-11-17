@@ -1,11 +1,13 @@
 package com.my.junit.testmanager.services;
 
 import com.intellij.ide.highlighter.JavaFileType;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
@@ -43,6 +45,13 @@ public class TestDataGenerator {
     private static final String JAVA_EXTENSION = ".java";
     private static final String IMPORT_STATIC_PREFIX = "import static ";
     private static final String SEMICOLON = ";";
+    private static final String TARGET_TYPE_CLASS = "CLASS";
+    private static final String TARGET_TYPE_METHOD = "METHOD";
+    private static final String PUBLIC_CLASS_PREFIX = "public class ";
+    private static final String CLASS_OPEN_BRACE = " {\n";
+    private static final String CLASS_CLOSE_BRACE = "}\n";
+    private static final String METHOD_INDENT = "    ";
+    private static final String NULL_VALUE = "null";
 
     private final LoggerUtils log;
     private final Map<String, PsiClass> generatedGenerators;
@@ -96,26 +105,31 @@ public class TestDataGenerator {
             return;
         }
 
-        final var sourceTestRoot = findOrCreateSourceTestRoot(module);
-        if (sourceTestRoot == null) {
-            log.logWarn("Source root not found for module: " + module.getName());
-            return;
-        }
-
-        final var sourcePackageDir = findOrCreatePackageDir(project, sourceTestRoot, packageName);
-        if (sourcePackageDir == null) {
-            log.logWarn("Source package directory could not be found or created for package: " + packageName);
-            return;
-        }
-
         final Set<PsiClass> classesForThisGenerator = collectClassesForGenerator(clazz);
 
         WriteCommandAction.runWriteCommandAction(project, () -> {
             try {
+                final var sourceTestRoot = findOrCreateSourceTestRoot(module);
+                if (sourceTestRoot == null) {
+                    log.logWarn("Source root not found for module: " + module.getName());
+                    return;
+                }
+
+                final var sourcePackageDir = findOrCreatePackageDir(project, sourceTestRoot, packageName);
+                if (sourcePackageDir == null) {
+                    log.logWarn("Source package directory could not be found or created for package: " + packageName);
+                    return;
+                }
+
                 final var content = prepareGeneratorContent(generatorName, classesForThisGenerator);
                 final var javaFile = createJavaFile(generatorName, packageName, content);
-                addFileToDirectory(sourcePackageDir, javaFile, packageName, generatorName);
+                final var createdFile = addFileToDirectory(sourcePackageDir, javaFile, packageName, generatorName);
                 log.logInfo("Generated generator class: " + generatorName + " in package: " + packageName);
+                
+                // Обновляем индексы и рефакторинг после создания файла
+                if (createdFile != null) {
+                    refreshFileIndices(createdFile);
+                }
             } catch (Exception e) {
                 log.logError("Failed to generate generator for class: " + className, e);
             }
@@ -169,18 +183,48 @@ public class TestDataGenerator {
 
     /**
      * Добавляет файл в директорию и регистрирует сгенерированный класс.
+     * 
+     * @return Созданный PsiJavaFile или null в случае ошибки
      */
-    private void addFileToDirectory(
+    @Nullable
+    private PsiJavaFile addFileToDirectory(
             @NotNull PsiDirectory dir,
             @NotNull PsiJavaFile file,
             @NotNull String packageName,
             @NotNull String generatorName
     ) {
-        final var finalFile = (PsiJavaFile) dir.add(file);
-        final var classes = finalFile.getClasses();
-        if (classes.length > 0) {
-            generatedGenerators.put(packageName + "." + generatorName, classes[0]);
+        try {
+            final var finalFile = (PsiJavaFile) dir.add(file);
+            final var classes = finalFile.getClasses();
+            if (classes.length > 0) {
+                generatedGenerators.put(packageName + "." + generatorName, classes[0]);
+            }
+            return finalFile;
+        } catch (Exception e) {
+            log.logError("Failed to add file to directory: " + dir.getVirtualFile().getPath(), e);
+            return null;
         }
+    }
+
+    /**
+     * Обновляет индексы проекта для созданного файла.
+     * Помечает файл как измененный и обновляет PSI кэш.
+     */
+    private void refreshFileIndices(@NotNull PsiJavaFile file) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                final var virtualFile = file.getVirtualFile();
+                if (virtualFile != null) {
+                    // Помечаем файл как измененный для обновления индексов
+                    VfsUtil.markDirtyAndRefresh(false, false, false, virtualFile);
+                    // Обновляем PSI кэш
+                    PsiManager.getInstance(project).dropPsiCaches();
+                    log.logInfo("Refreshed indices for file: " + virtualFile.getPath());
+                }
+            } catch (Exception e) {
+                log.logError("Failed to refresh file indices", e);
+            }
+        });
     }
 
     /**
@@ -216,46 +260,85 @@ public class TestDataGenerator {
      */
     @NotNull
     private Set<PsiClass> collectAllDependentClasses(@Nullable PsiClass clazz, @NotNull Set<PsiClass> visited) {
-
         if (clazz == null || visited.contains(clazz)) {
             return new HashSet<>();
         }
         visited.add(clazz);
 
         final var dependents = new HashSet<PsiClass>();
-
+        
+        // Собираем прямые зависимости
         if (PsiUtils.isRecord(clazz)) {
-            dependents.addAll(Arrays.stream(clazz.getMethods())
-                    .filter(method -> method.getParameterList().isEmpty() && !method.isConstructor())
-                    .map(PsiMethod::getReturnType)
-                    .filter(Objects::nonNull)
-                    .filter(PsiClassType.class::isInstance)
-                    .map(type -> ((PsiClassType) type).resolve())
-                    .filter(Objects::nonNull)
-                    .filter(resolved -> !resolved.equals(clazz))
-                    .collect(Collectors.toSet()));
+            dependents.addAll(collectRecordDependencies(clazz));
+        } else {
+            dependents.addAll(collectFieldDependencies(clazz));
         }
+        
+        // Собираем косвенные зависимости (рекурсивно)
+        final var indirectDependents = collectIndirectDependencies(dependents, visited);
+        dependents.addAll(indirectDependents);
+        
+        // Собираем зависимости из вложенных классов
+        final var innerDependents = collectInnerClassDependencies(clazz, visited);
+        dependents.addAll(innerDependents);
 
+        return dependents;
+    }
 
-        dependents.addAll(Arrays.stream(clazz.getFields())
+    /**
+     * Собирает зависимости из компонентов record'а.
+     */
+    @NotNull
+    private Set<PsiClass> collectRecordDependencies(@NotNull PsiClass recordClass) {
+        return Arrays.stream(recordClass.getMethods())
+                .filter(method -> method.getParameterList().isEmpty() && !method.isConstructor())
+                .map(PsiMethod::getReturnType)
+                .filter(Objects::nonNull)
+                .filter(PsiClassType.class::isInstance)
+                .map(type -> ((PsiClassType) type).resolve())
+                .filter(Objects::nonNull)
+                .filter(resolved -> !resolved.equals(recordClass))
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Собирает зависимости из полей обычного класса.
+     */
+    @NotNull
+    private Set<PsiClass> collectFieldDependencies(@NotNull PsiClass clazz) {
+        return Arrays.stream(clazz.getFields())
                 .filter(field -> field.getType() instanceof PsiClassType)
                 .map(field -> ((PsiClassType) field.getType()).resolve())
                 .filter(Objects::nonNull)
                 .filter(resolved -> !resolved.equals(clazz))
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toSet());
+    }
 
-
-        final Set<PsiClass> indirectDependents = new HashSet<>();
-        for (var dependent : dependents) {
+    /**
+     * Рекурсивно собирает косвенные зависимости (зависимости зависимостей).
+     */
+    @NotNull
+    private Set<PsiClass> collectIndirectDependencies(
+            @NotNull Set<PsiClass> directDependents,
+            @NotNull Set<PsiClass> visited
+    ) {
+        final var indirectDependents = new HashSet<PsiClass>();
+        for (var dependent : directDependents) {
             indirectDependents.addAll(collectAllDependentClasses(dependent, visited));
         }
-        dependents.addAll(indirectDependents);
+        return indirectDependents;
+    }
 
+    /**
+     * Собирает зависимости из вложенных классов.
+     */
+    @NotNull
+    private Set<PsiClass> collectInnerClassDependencies(@NotNull PsiClass clazz, @NotNull Set<PsiClass> visited) {
+        final var innerDependents = new HashSet<PsiClass>();
         for (var inner : clazz.getInnerClasses()) {
-            dependents.addAll(collectAllDependentClasses(inner, visited));
+            innerDependents.addAll(collectAllDependentClasses(inner, visited));
         }
-
-        return dependents;
+        return innerDependents;
     }
 
     /**
@@ -289,7 +372,7 @@ public class TestDataGenerator {
      */
     private void appendClassAnnotations(@NotNull StringBuilder builder, @NotNull Set<String> usedImports) {
         config.getAnnotationsDataList().stream()
-                .filter(annotation -> "CLASS".equals(annotation.getTargetType()))
+                .filter(annotation -> TARGET_TYPE_CLASS.equals(annotation.getTargetType()))
                 .forEach(annotation -> {
                     builder.append(annotation.getAnnotationText()).append("\n");
                     if (annotation.getImports() != null && !annotation.getImports().isEmpty()) {
@@ -305,14 +388,14 @@ public class TestDataGenerator {
      * @param generatorName Имя генератора.
      */
     private void appendClassDeclaration(@NotNull StringBuilder builder, @NotNull String generatorName) {
-        builder.append("public class ").append(generatorName).append(" {\n");
+        builder.append(PUBLIC_CLASS_PREFIX).append(generatorName).append(CLASS_OPEN_BRACE);
     }
 
     /**
      * Добавляет конец объявления класса.
      */
     private void closeClassDeclaration(@NotNull StringBuilder builder) {
-        builder.append("}\n");
+        builder.append(CLASS_CLOSE_BRACE);
     }
 
     /**
@@ -320,9 +403,9 @@ public class TestDataGenerator {
      */
     private void appendMethodAnnotations(@NotNull StringBuilder builder, @NotNull Set<String> usedImports) {
         config.getAnnotationsDataList().stream()
-                .filter(annotation -> "METHOD".equals(annotation.getTargetType()))
+                .filter(annotation -> TARGET_TYPE_METHOD.equals(annotation.getTargetType()))
                 .forEach(annotation -> {
-                    builder.append("    ").append(annotation.getAnnotationText()).append("\n");
+                    builder.append(METHOD_INDENT).append(annotation.getAnnotationText()).append("\n");
                     if (annotation.getImports() != null && !annotation.getImports().isEmpty()) {
                         usedImports.add(annotation.getImports());
                     }
@@ -339,46 +422,89 @@ public class TestDataGenerator {
     ) {
         final var className = clazz.getName();
         final var methodName = config.getGeneratorMethodName() + className;
-        final var paramsBuilder = new StringBuilder("\n");
+        final var paramsText = buildMethodParameters(usedImports, clazz);
+        final var methodText = buildMethodText(className, methodName, paramsText);
+        
+        builder.append(methodText);
+        log.logInfo("Added method text for: " + methodName);
+    }
 
+    /**
+     * Строит строку параметров для конструктора на основе типа класса (record или обычный класс).
+     */
+    @NotNull
+    private String buildMethodParameters(@NotNull Set<String> usedImports, @NotNull PsiClass clazz) {
+        final var paramsBuilder = new StringBuilder("\n");
+        
         if (PsiUtils.isRecord(clazz)) {
-            final var methods = clazz.getMethods();
-            int methodIndex = 0;
-            for (var method : methods) {
-                if (method.getParameterList().isEmpty() && !method.isConstructor()) {
-                    final var componentType = method.getReturnType();
+            appendRecordParameters(paramsBuilder, usedImports, clazz);
+        } else {
+            appendClassFieldParameters(paramsBuilder, usedImports, clazz);
+        }
+        return paramsBuilder.toString().trim();
+    }
+
+    /**
+     * Добавляет параметры для record (из компонентов record'а).
+     */
+    private void appendRecordParameters(
+            @NotNull StringBuilder paramsBuilder,
+            @NotNull Set<String> usedImports,
+            @NotNull PsiClass clazz
+    ) {
+        final var methods = clazz.getMethods();
+        int methodIndex = 0;
+        for (var method : methods) {
+            if (method.getParameterList().isEmpty() && !method.isConstructor()) {
+                final var componentType = method.getReturnType();
+                if (componentType != null) {
                     final var paramValue = generateValueForType(componentType, usedImports, clazz);
                     paramsBuilder.append("                ").append(paramValue);
                     paramsBuilder.append(methodIndex < methods.length - 1 ? ",\n" : "\n");
                     methodIndex++;
                 }
             }
-        } else {
-            for (int i = 0; i < clazz.getFields().length; i++) {
-                final var field = clazz.getFields()[i];
-                final var paramValue = generateValueForType(field.getType(), usedImports, clazz);
-                paramsBuilder.append("                ").append(paramValue);
-                paramsBuilder.append(i < clazz.getFields().length - 1 ? ",\n" : "\n");
-            }
         }
+    }
 
-        final var paramsText = paramsBuilder.toString().trim();
-        final var methodText = String.format(
+    /**
+     * Добавляет параметры для обычного класса (из полей класса).
+     */
+    private void appendClassFieldParameters(
+            @NotNull StringBuilder paramsBuilder,
+            @NotNull Set<String> usedImports,
+            @NotNull PsiClass clazz
+    ) {
+        final var fields = clazz.getFields();
+        for (int i = 0; i < fields.length; i++) {
+            final var field = fields[i];
+            final var paramValue = generateValueForType(field.getType(), usedImports, clazz);
+            paramsBuilder.append("                ").append(paramValue);
+            paramsBuilder.append(i < fields.length - 1 ? ",\n" : "\n");
+        }
+    }
+
+    /**
+     * Строит полный текст метода генератора.
+     */
+    @NotNull
+    private String buildMethodText(@NotNull String className, @NotNull String methodName, @NotNull String paramsText) {
+        final var formattedParams = paramsText.isEmpty()
+                ? ""
+                : "\n" + paramsText + "\n            ";
+        return String.format(
                 "    public static %s %s() {\n        return new %s(%s);\n    }\n",
                 className,
                 methodName,
                 className,
-                paramsText.isEmpty()
-                        ? ""
-                        : "\n" + paramsText + "\n            "
+                formattedParams
         );
-        builder.append(methodText);
-        log.logInfo("Added method text for: " + methodName);
     }
 
     /**
      * Генерирует значение для типа поля/компонента.
-     * Использует фабрики из конфига или генераторы для пользовательских классов. Иначе — null.
+     * Использует фабрики из конфига или генераторы для пользовательских классов.
+     * Если ничего не найдено, возвращает null.
      */
     @NotNull
     private String generateValueForType(
@@ -388,13 +514,14 @@ public class TestDataGenerator {
     ) {
         final var canonicalTypeName = type.getCanonicalText();
 
-        for (var factory : config.getFactoryMethodDataList()) {
-            if (factory.getFactoryClass().equals(canonicalTypeName)) {
-                usedImports.add(factory.getImports());
-                return factory.getMethodName();
-            }
+        // Проверяем фабрики из конфига
+        final var factory = config.findFactoryMethodForType(canonicalTypeName);
+        if (factory != null) {
+            usedImports.add(factory.getImports());
+            return factory.getMethodName();
         }
 
+        // Обработка пользовательских классов
         if (type instanceof PsiClassType psiClassType) {
             final var resolved = psiClassType.resolve();
             if (resolved != null && !resolved.equals(clazz)) {
@@ -417,7 +544,8 @@ public class TestDataGenerator {
                 }
             }
         }
-        return "null";
+        
+        return NULL_VALUE;
     }
 
     /**
@@ -431,22 +559,72 @@ public class TestDataGenerator {
 
     /**
      * Находит или создает корень тестового источника.
+     * Пытается найти существующую тестовую директорию, если не найдена - создает её.
      */
     @Nullable
     private VirtualFile findOrCreateSourceTestRoot(@NotNull Module module) {
-        final var sourceRoots = ModuleRootManager.getInstance(module)
-                .getSourceRoots(JavaSourceRootType.TEST_SOURCE);
+        final var moduleRootManager = ModuleRootManager.getInstance(module);
+        var sourceRoots = moduleRootManager.getSourceRoots(JavaSourceRootType.TEST_SOURCE);
+        
         if (!sourceRoots.isEmpty()) {
-            return sourceRoots.get(0);
-        } else {
-            final var mainRoots = ModuleRootManager.getInstance(module)
-                    .getSourceRoots(JavaSourceRootType.SOURCE);
-            if (!mainRoots.isEmpty()) {
-                final var mainRoot = mainRoots.get(0);
-                log.logWarn("Test source root not found, using main source root for tests: " + mainRoot.getPath());
-                return mainRoot;
+            final var testRoot = sourceRoots.get(0);
+            if (testRoot.exists() && testRoot.isDirectory()) {
+                log.logInfo("Found existing test source root: " + testRoot.getPath());
+                return testRoot;
             }
         }
+
+        // Пытаемся найти main source root и создать рядом test директорию
+        final var mainRoots = moduleRootManager.getSourceRoots(JavaSourceRootType.SOURCE);
+        if (!mainRoots.isEmpty()) {
+            final var mainRoot = mainRoots.get(0);
+            final var mainRootPath = mainRoot.getPath();
+            
+            // Пытаемся найти стандартные тестовые директории
+            final var possibleTestPaths = new String[]{
+                    mainRootPath.replace("/src/main/java", "/src/test/java"),
+                    mainRootPath.replace("/src/main/java", "/src/test"),
+                    mainRootPath.replace("src/main/java", "src/test/java"),
+                    mainRootPath.replace("src/main/java", "src/test"),
+                    mainRootPath + "/../test/java",
+                    mainRootPath + "/../test"
+            };
+
+            for (var testPath : possibleTestPaths) {
+                final var testDir = VfsUtil.findFileByIoFile(new java.io.File(testPath), false);
+                if (testDir != null && testDir.exists() && testDir.isDirectory()) {
+                    log.logInfo("Found test directory at: " + testDir.getPath());
+                    return testDir;
+                }
+            }
+
+            // Если не нашли, пытаемся создать test/java рядом с main/java
+            try {
+                final var mainRootParent = mainRoot.getParent();
+                if (mainRootParent != null) {
+                    var testDir = mainRootParent.findChild("test");
+                    if (testDir == null || !testDir.isDirectory()) {
+                        testDir = mainRootParent.createChildDirectory(null, "test");
+                        log.logInfo("Created test directory: " + testDir.getPath());
+                    }
+                    
+                    var testJavaDir = testDir.findChild("java");
+                    if (testJavaDir == null || !testJavaDir.isDirectory()) {
+                        testJavaDir = testDir.createChildDirectory(null, "java");
+                        log.logInfo("Created test/java directory: " + testJavaDir.getPath());
+                    }
+                    
+                    return testJavaDir;
+                }
+            } catch (Exception e) {
+                log.logError("Failed to create test directory structure", e);
+            }
+
+            log.logWarn("Test source root not found, using main source root for tests: " + mainRoot.getPath());
+            return mainRoot;
+        }
+        
+        log.logError("No source roots found for module: " + module.getName());
         return null;
     }
 
@@ -508,9 +686,6 @@ public class TestDataGenerator {
      */
     private record GeneratorContent(@NotNull String imports, @NotNull String classText) {}
 }
-
-
-
 
 
 

@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
 import com.my.junit.testmanager.config.TestManagerConfig;
+import com.my.junit.testmanager.config.data.GroupData;
 import com.my.junit.testmanager.data.SearchType;
 import com.my.junit.testmanager.data.TestClassInfoData;
 import com.my.junit.testmanager.utils.LoggerUtils;
@@ -15,6 +16,7 @@ import org.jetbrains.jps.model.java.JavaSourceRootType;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import static java.util.Objects.requireNonNull;
 
@@ -147,12 +149,12 @@ public class TestClassesFinder {
         log.logInfo("Determining group for test class: " + testClassInfoData.getName());
 
         final var settings = TestManagerConfig.getInstance();
+        final var activeProfile = settings.getActiveProfile();
+        final var testPath = testClassInfoData.getPath();
 
-        final var groups = settings.getGroups();
-        final var assigned = groups.stream()
-                .filter(g -> g.getProfiles().contains(settings.getActiveProfile()))
-                .filter(g -> g.getRegex() != null &&
-                        Pattern.compile(g.getRegex()).matcher(testClassInfoData.getPath()).find())
+        final var assigned = settings.getGroups().stream()
+                .filter(group -> group.getProfiles().contains(activeProfile))
+                .filter(group -> matchesGroupRegex(group, testPath))
                 .findFirst()
                 .orElse(null);
 
@@ -160,13 +162,29 @@ public class TestClassesFinder {
             testClassInfoData.setGroup(assigned);
             log.logInfo("Assigned group: " + assigned.getName() + " to test class: " + testClassInfoData.getName());
         } else {
-            log.logInfo(
-                    "No matching group found. Assigned default group to test class: " + testClassInfoData.getName()
-            );
+            log.logInfo("No matching group found. Assigned default group to test class: " + testClassInfoData.getName());
+        }
+    }
+
+    /**
+     * Проверяет, соответствует ли путь тестового класса регулярному выражению группы.
+     *
+     * @param group группа с регулярным выражением
+     * @param testPath путь тестового класса
+     * @return true, если путь соответствует regex группы
+     */
+    private boolean matchesGroupRegex(@NotNull GroupData group, @NotNull String testPath) {
+        final var regex = group.getRegex();
+        if (regex == null || regex.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            return Pattern.compile(regex).matcher(testPath).find();
+        } catch (PatternSyntaxException e) {
+            log.logWarn("Invalid regex pattern in group '" + group.getName() + "': " + regex);
+            return false;
         }
     }
 }
-
-
 
 

@@ -1,6 +1,7 @@
 package com.my.junit.testmanager.ui;
 
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.my.junit.testmanager.config.data.ProfileData;
@@ -20,12 +21,12 @@ public class ProfileForm extends DialogWrapper {
     private JPanel table;
     private JLabel labelName;
     private JTextField nameField;
-    private final ProfileData existingGroup;
+    private final ProfileData existingProfile;
     private final LoggerUtils log = LoggerUtils.getLogger(ProfileForm.class);
 
     public ProfileForm(@Nullable ProfileData existing) {
         super(true);
-        this.existingGroup = existing;
+        this.existingProfile = existing;
         setTitle(existing == null ? message("dialog.title.add") : message("dialog.title.edit"));
         init();
     }
@@ -35,11 +36,21 @@ public class ProfileForm extends DialogWrapper {
         this.labelName.setText(message("settings.label.profile.name"));
         this.labelName.setToolTipText(message("settings.label.profile.name.tooltip"));
 
-        if (this.existingGroup != null) {
-            log.logInfo("Editing existing profile: " + this.existingGroup);
-            this.nameField.setText(existingGroup.getName());
+        if (this.existingProfile != null) {
+            log.logInfo("Editing existing profile: " + this.existingProfile);
+            this.nameField.setText(existingProfile.getName());
         }
         return this.table;
+    }
+
+    @Nullable
+    @Override
+    protected ValidationInfo doValidate() {
+        final var name = this.nameField.getText().trim();
+        if (name.isEmpty()) {
+            return new ValidationInfo(message("validation.error.profile.name.empty"), this.nameField);
+        }
+        return null;
     }
 
     public ProfileData getProfileConfigData() {

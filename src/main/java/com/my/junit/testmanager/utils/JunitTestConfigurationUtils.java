@@ -59,33 +59,58 @@ public class JunitTestConfigurationUtils {
 
             final var config = settings.getConfiguration();
 
-            final var classLoader = config.getClass().getClassLoader();
-            final var psiMethodClass = classLoader.loadClass("com.intellij.psi.PsiMethod");
-            final var method = config.getClass()
-                    .getMethod(
-                            "bePatternConfiguration",
-                            List.class,
-                            psiMethodClass
-                    );
-
-            method.invoke(config, psiClasses, null);
-
-            if (group.getVmArgs() != null && !group.getVmArgs().trim().isEmpty()) {
-                final var setVmMethod = config.getClass().getMethod("setVMParameters", String.class);
-                setVmMethod.invoke(config, group.getVmArgs());
-                log.logInfo("Set VM args: " + group.getVmArgs());
-            }
+            // Используем рефлексию для вызова методов конфигурации JUnit
+            configureJUnitPattern(config, psiClasses);
+            configureVmParameters(config, group);
 
             settings.setName(configName);
 
             runManager.addConfiguration(settings);
             log.logInfo("Configuration created: " + configName);
-        } catch (Exception e) {
-            log.logError("Failed to create configuration: ", e);
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
+            log.logError("Failed to find required method via reflection: " + e.getMessage(), e);
             MessagesDialogUtils.messageError(
                     project,
                     message("dialog.test.configurations.creation.failed")
             );
+        } catch (Exception e) {
+            log.logError("Failed to create configuration", e);
+            MessagesDialogUtils.messageError(
+                    project,
+                    message("dialog.test.configurations.creation.failed")
+            );
+        }
+    }
+
+    /**
+     * Настраивает паттерн конфигурации JUnit через рефлексию.
+     *
+     * @param config конфигурация JUnit
+     * @param psiClasses список классов для конфигурации
+     * @throws Exception если не удалось вызвать метод через рефлексию
+     */
+    private static void configureJUnitPattern(@NotNull Object config, @NotNull List<PsiClass> psiClasses) throws Exception {
+        final var classLoader = config.getClass().getClassLoader();
+        final var psiMethodClass = classLoader.loadClass("com.intellij.psi.PsiMethod");
+        final var method = config.getClass()
+                .getMethod("bePatternConfiguration", List.class, psiMethodClass);
+        method.invoke(config, psiClasses, null);
+        log.logInfo("Configured JUnit pattern for " + psiClasses.size() + " classes");
+    }
+
+    /**
+     * Настраивает VM параметры для конфигурации через рефлексию.
+     *
+     * @param config конфигурация JUnit
+     * @param group группа с VM аргументами
+     * @throws Exception если не удалось вызвать метод через рефлексию
+     */
+    private static void configureVmParameters(@NotNull Object config, @NotNull GroupData group) throws Exception {
+        final var vmArgs = group.getVmArgs();
+        if (vmArgs != null && !vmArgs.trim().isEmpty()) {
+            final var setVmMethod = config.getClass().getMethod("setVMParameters", String.class);
+            setVmMethod.invoke(config, vmArgs);
+            log.logInfo("Set VM args: " + vmArgs);
         }
     }
 }

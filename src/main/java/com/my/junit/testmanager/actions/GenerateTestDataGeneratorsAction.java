@@ -10,12 +10,21 @@ import com.my.junit.testmanager.services.TestDataGenerator;
 import com.my.junit.testmanager.utils.LoggerUtils;
 import com.my.junit.testmanager.utils.MessagesDialogUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import static com.my.junit.testmanager.utils.MessagesBundle.message;
 
+/**
+ * Действие для генерации классов-генераторов тестовых данных для выбранного класса.
+ */
 public class GenerateTestDataGeneratorsAction extends AnAction {
     private static final LoggerUtils log = LoggerUtils.getLogger(GenerateTestDataGeneratorsAction.class);
 
+    /**
+     * Выполняет генерацию классов-генераторов тестовых данных для класса из контекста.
+     *
+     * @param e событие действия
+     */
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         final var project = e.getProject();
@@ -35,8 +44,13 @@ public class GenerateTestDataGeneratorsAction extends AnAction {
                 .generateGeneratorForClass(clazz);
     }
 
+    /**
+     * Обновляет видимость действия в зависимости от наличия редактора.
+     *
+     * @param e событие действия
+     */
     @Override
-    public void update(AnActionEvent e) {
+    public void update(@NotNull AnActionEvent e) {
         final var editor = e.getData(CommonDataKeys.EDITOR);
         boolean isVisible = (editor != null);
 
@@ -46,7 +60,18 @@ public class GenerateTestDataGeneratorsAction extends AnAction {
         }
     }
 
-    private PsiClass getPsiClassFromContext(AnActionEvent e) {
+    /**
+     * Извлекает PsiClass из контекста действия.
+     * Пытается найти класс в следующем порядке:
+     * 1. PSI_ELEMENT (если выбран класс или файл)
+     * 2. Файл из редактора (PSI_FILE)
+     * 3. Файл из Project View (PSI_FILE)
+     *
+     * @param e событие действия
+     * @return найденный класс или null
+     */
+    @Nullable
+    private PsiClass getPsiClassFromContext(@NotNull AnActionEvent e) {
         // Сначала пробуем PSI_ELEMENT
         final var psiElement = e.getData(CommonDataKeys.PSI_ELEMENT);
         if (psiElement instanceof PsiClass psiClass) {
@@ -55,10 +80,7 @@ public class GenerateTestDataGeneratorsAction extends AnAction {
 
         // Если PSI_ELEMENT — файл, берём первый класс
         if (psiElement instanceof PsiJavaFile javaFile) {
-            final var classes = javaFile.getClasses();
-            if (classes.length > 0) {
-                return classes[0];
-            }
+            return getFirstClassFromFile(javaFile);
         }
 
         // Если нет PSI_ELEMENT, берём из текущего файла редактора
@@ -66,23 +88,29 @@ public class GenerateTestDataGeneratorsAction extends AnAction {
         if (editor != null) {
             final var file = e.getData(CommonDataKeys.PSI_FILE);
             if (file instanceof PsiJavaFile javaFile) {
-                final var classes = javaFile.getClasses();
-                if (classes.length > 0) {
-                    return classes[0];
-                }
+                return getFirstClassFromFile(javaFile);
             }
         }
 
         // Если ничего, берём из PSI_FILE (если выбран файл в Project View)
         final var psiFile = e.getData(CommonDataKeys.PSI_FILE);
         if (psiFile instanceof PsiJavaFile javaFile) {
-            final var classes = javaFile.getClasses();
-            if (classes.length > 0) {
-                return classes[0];
-            }
+            return getFirstClassFromFile(javaFile);
         }
 
         return null;
+    }
+
+    /**
+     * Извлекает первый класс из Java файла.
+     *
+     * @param javaFile Java файл
+     * @return первый класс или null, если файл пустой
+     */
+    @Nullable
+    private PsiClass getFirstClassFromFile(@NotNull PsiJavaFile javaFile) {
+        final var classes = javaFile.getClasses();
+        return classes.length > 0 ? classes[0] : null;
     }
 
     @Override

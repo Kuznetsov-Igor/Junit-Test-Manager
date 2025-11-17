@@ -47,9 +47,3 @@ public class RelocateTestsAction extends AnAction {
 
 
 
-
-
-
-
-
-

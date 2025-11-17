@@ -45,7 +45,7 @@ public class SettingsConfigurationForm implements Configurable {
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
     public String getDisplayName() {
-        return "Test Manager Settings";
+        return message("settings.title.test.manager");
     }
 
     @Nullable
@@ -173,28 +173,44 @@ public class SettingsConfigurationForm implements Configurable {
         log.logInfo("Profile removed: " + selectedName);
     }
 
+    /**
+     * Обновляет профиль во всех группах, которые его содержат.
+     *
+     * @param oldProfile старый профиль для замены
+     * @param newProfile новый профиль
+     */
     private void updateProfileToUpdateGroups(@NotNull ProfileData oldProfile, @NotNull ProfileData newProfile) {
-        this.groupConfigTableModel.getItems()
-                .stream()
-                .filter(group -> group.getProfiles()
-                        .stream()
+        final var groupsWithProfile = this.groupConfigTableModel.getItems().stream()
+                .filter(group -> group.getProfiles().stream()
                         .anyMatch(profile -> profile.getName().equals(oldProfile.getName())))
-                .forEach(group -> {
-                    group.removeProfile(oldProfile);
-                    group.addProfile(newProfile);
-                });
-        this.groupConfigTableModel.fireTableDataChanged();
+                .toList();
 
+        groupsWithProfile.forEach(group -> {
+            group.removeProfile(oldProfile);
+            group.addProfile(newProfile);
+        });
+
+        if (!groupsWithProfile.isEmpty()) {
+            this.groupConfigTableModel.fireTableDataChanged();
+        }
     }
 
+    /**
+     * Удаляет профиль из всех групп, которые его содержат.
+     *
+     * @param oldProfile профиль для удаления
+     */
     private void removeProfileToUpdateGroups(@NotNull ProfileData oldProfile) {
-        this.groupConfigTableModel.getItems()
-                .stream()
-                .filter(group -> group.getProfiles()
-                        .stream()
+        final var groupsWithProfile = this.groupConfigTableModel.getItems().stream()
+                .filter(group -> group.getProfiles().stream()
                         .anyMatch(profile -> profile.getName().equals(oldProfile.getName())))
-                .forEach(group -> group.removeProfile(oldProfile));
-        this.groupConfigTableModel.fireTableDataChanged();
+                .toList();
+
+        groupsWithProfile.forEach(group -> group.removeProfile(oldProfile));
+
+        if (!groupsWithProfile.isEmpty()) {
+            this.groupConfigTableModel.fireTableDataChanged();
+        }
     }
 
     private void loadedSettingsData() {

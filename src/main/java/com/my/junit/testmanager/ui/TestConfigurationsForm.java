@@ -29,7 +29,7 @@ public class TestConfigurationsForm extends AbstractTableForm<TestClassInfoTable
             @NotNull Project project
     ) {
         super(
-                "Relocate Tests",
+                message("dialog.title.test.configurations"),
                 message("button.test.configurations"),
                 message("button.cancel"),
                 model
@@ -115,7 +115,4 @@ public class TestConfigurationsForm extends AbstractTableForm<TestClassInfoTable
         super.doOKAction();
     }
 }
-
-
-
 

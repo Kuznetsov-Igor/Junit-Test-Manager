@@ -36,6 +36,4 @@ public class FindAllTestsAction extends AnAction {
     public ActionUpdateThread getActionUpdateThread() {
         return ActionUpdateThread.BGT;
     }
-
 }
-

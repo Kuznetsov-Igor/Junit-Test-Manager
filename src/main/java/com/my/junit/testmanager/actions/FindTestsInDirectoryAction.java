@@ -47,7 +47,5 @@ public class FindTestsInDirectoryAction extends AnAction {
     public ActionUpdateThread getActionUpdateThread() {
         return ActionUpdateThread.BGT;
     }
-
 }
-
 

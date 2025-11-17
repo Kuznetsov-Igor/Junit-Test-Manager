@@ -31,7 +31,7 @@ public class TableRelocationForm extends AbstractTableForm<TestClassRelocationTa
             @NotNull Project project
     ) {
         super(
-                "Relocate Tests",
+                message("dialog.title.relocate.tests"),
                 message("button.relocate"),
                 message("button.cancel"),
                 model
@@ -85,6 +85,7 @@ public class TableRelocationForm extends AbstractTableForm<TestClassRelocationTa
                     project,
                     MessagesBundle.message("dialog.relocation.no.selected")
             );
+            return;
         }
         log.logInfo("User selected " + selected.size() + " tests for relocation.");
         for (var item : selected) {

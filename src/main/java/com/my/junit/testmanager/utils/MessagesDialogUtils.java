@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static com.my.junit.testmanager.utils.MessagesBundle.message;
+
 /**
  * Утилитарный класс для отображения диалоговых окон с сообщениями.
  */
@@ -19,7 +21,7 @@ public class MessagesDialogUtils {
         Messages.showMessageDialog(
                 project,
                 message,
-                "Error",
+                message("dialog.title.error"),
                 Messages.getErrorIcon()
         );
     }
@@ -31,7 +33,7 @@ public class MessagesDialogUtils {
         Messages.showMessageDialog(
                 project,
                 message,
-                "Information",
+                message("dialog.title.information"),
                 Messages.getInformationIcon()
         );
     }
@@ -43,7 +45,7 @@ public class MessagesDialogUtils {
         Messages.showMessageDialog(
                 project,
                 message,
-                "Warning",
+                message("dialog.title.warning"),
                 Messages.getWarningIcon()
         );
     }

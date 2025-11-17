@@ -79,123 +79,122 @@ public class TestGeneratorConfig extends AbstractPersistentStateComponent<TestGe
     public List<FactoryMethodData> getFactoryMethodDataList() {
         if (factoryMethodDataList == null) {
             factoryMethodDataList = new ArrayList<>();
-            // Дефолтные фабричные методы
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "String",
-                            "randomAlphabetic(10)",
-                            "import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "int",
-                            "new Random().nextInt()",
-                            "import java.util.Random;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "Integer",
-                            "new Random().nextInt()",
-                            "import java.util.Random;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "long",
-                            "new Random().nextLong()",
-                            "import java.util.Random;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "Long",
-                            "new Random().nextLong()",
-                            "import java.util.Random;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "boolean",
-                            "new Random().nextBoolean()",
-                            "import java.util.Random;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "Boolean",
-                            "new Random().nextBoolean()",
-                            "import java.util.Random;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "double",
-                            "new Random().nextDouble()",
-                            "import java.util.Random;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "Double",
-                            "new Random().nextDouble()",
-                            "import java.util.Random;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "java.util.UUID",
-                            "UUID.randomUUID()",
-                            "import java.util.UUID;"
-                    )
-            );
-            // Дополнительные базовые типы
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "java.time.LocalDate",
-                            "LocalDate.now()",
-                            "import java.time.LocalDate;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "java.time.Instant",
-                            "Instant.now()",
-                            "import java.time.Instant;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "java.time.LocalDateTime",
-                            "LocalDateTime.now()",
-                            "import java.time.LocalDateTime;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "java.time.LocalTime",
-                            "LocalTime.now()",
-                            "import java.time.LocalTime;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "java.math.BigDecimal",
-                            "new BigDecimal(\"100.00\")",
-                            "import java.math.BigDecimal;"
-                    )
-            );
-            factoryMethodDataList.add(
-                    FactoryMethodData.of(
-                            "java.math.BigInteger",
-                            "new BigInteger(\"100\")",
-                            "import java.math.BigInteger;"
-                    )
-            );
+            initializeDefaultFactoryMethods();
         }
         return factoryMethodDataList;
     }
 
+    /**
+     * Инициализирует дефолтные фабричные методы для различных типов.
+     */
+    private void initializeDefaultFactoryMethods() {
+        addStringFactoryMethod();
+        addPrimitiveNumericFactoryMethods();
+        addPrimitiveBooleanFactoryMethods();
+        addUuidFactoryMethod();
+        addTimeFactoryMethods();
+        addBigNumberFactoryMethods();
+    }
+
+    /**
+     * Добавляет фабричный метод для String.
+     */
+    private void addStringFactoryMethod() {
+        factoryMethodDataList.add(FactoryMethodData.of(
+                "String",
+                "randomAlphabetic(10)",
+                "import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;"
+        ));
+    }
+
+    /**
+     * Добавляет фабричные методы для примитивных числовых типов и их обёрток.
+     */
+    private void addPrimitiveNumericFactoryMethods() {
+        final var randomImport = "import java.util.Random;";
+        factoryMethodDataList.add(FactoryMethodData.of("int", "new Random().nextInt()", randomImport));
+        factoryMethodDataList.add(FactoryMethodData.of("Integer", "new Random().nextInt()", randomImport));
+        factoryMethodDataList.add(FactoryMethodData.of("long", "new Random().nextLong()", randomImport));
+        factoryMethodDataList.add(FactoryMethodData.of("Long", "new Random().nextLong()", randomImport));
+        factoryMethodDataList.add(FactoryMethodData.of("double", "new Random().nextDouble()", randomImport));
+        factoryMethodDataList.add(FactoryMethodData.of("Double", "new Random().nextDouble()", randomImport));
+    }
+
+    /**
+     * Добавляет фабричные методы для примитивного boolean и его обёртки.
+     */
+    private void addPrimitiveBooleanFactoryMethods() {
+        final var randomImport = "import java.util.Random;";
+        factoryMethodDataList.add(FactoryMethodData.of("boolean", "new Random().nextBoolean()", randomImport));
+        factoryMethodDataList.add(FactoryMethodData.of("Boolean", "new Random().nextBoolean()", randomImport));
+    }
+
+    /**
+     * Добавляет фабричный метод для UUID.
+     */
+    private void addUuidFactoryMethod() {
+        factoryMethodDataList.add(FactoryMethodData.of(
+                "java.util.UUID",
+                "UUID.randomUUID()",
+                "import java.util.UUID;"
+        ));
+    }
+
+    /**
+     * Добавляет фабричные методы для типов времени из java.time.
+     */
+    private void addTimeFactoryMethods() {
+        factoryMethodDataList.add(FactoryMethodData.of(
+                "java.time.LocalDate",
+                "LocalDate.now()",
+                "import java.time.LocalDate;"
+        ));
+        factoryMethodDataList.add(FactoryMethodData.of(
+                "java.time.Instant",
+                "Instant.now()",
+                "import java.time.Instant;"
+        ));
+        factoryMethodDataList.add(FactoryMethodData.of(
+                "java.time.LocalDateTime",
+                "LocalDateTime.now()",
+                "import java.time.LocalDateTime;"
+        ));
+        factoryMethodDataList.add(FactoryMethodData.of(
+                "java.time.LocalTime",
+                "LocalTime.now()",
+                "import java.time.LocalTime;"
+        ));
+    }
+
+    /**
+     * Добавляет фабричные методы для больших чисел (BigDecimal, BigInteger).
+     */
+    private void addBigNumberFactoryMethods() {
+        factoryMethodDataList.add(FactoryMethodData.of(
+                "java.math.BigDecimal",
+                "new BigDecimal(\"100.00\")",
+                "import java.math.BigDecimal;"
+        ));
+        factoryMethodDataList.add(FactoryMethodData.of(
+                "java.math.BigInteger",
+                "new BigInteger(\"100\")",
+                "import java.math.BigInteger;"
+        ));
+    }
+
+    /**
+     * Находит фабричный метод для заданного типа.
+     * Ищет по полному имени типа (canonical name) в списке фабричных методов.
+     *
+     * @param canonicalTypeName Полное имя типа (например, "int", "String", "java.util.UUID").
+     * @return FactoryMethodData если найден, иначе null.
+     */
+    @Nullable
+    public FactoryMethodData findFactoryMethodForType(@NotNull String canonicalTypeName) {
+        return getFactoryMethodDataList().stream()
+                .filter(factory -> factory.getFactoryClass().equals(canonicalTypeName))
+                .findFirst()
+                .orElse(null);
+    }
 
 }

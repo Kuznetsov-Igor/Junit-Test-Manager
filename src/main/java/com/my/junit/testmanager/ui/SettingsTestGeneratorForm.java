@@ -30,14 +30,14 @@ public class SettingsTestGeneratorForm implements Configurable {
     private JLabel labelGeneratorClassMethodName;
     private JTextField textFieldGeneratorClassMethodName;
     private JTable tableAnnotations;
-    private JTable tableFactorys;
+    private JTable tableFactories;
     private JButton buttonAnnotationAdd;
     private JButton buttonAnnotationRemove;
     private JButton buttonFactoryAdd;
     private JButton buttonFactoryRemove;
     private JPanel table;
 
-    private final LoggerUtils log = LoggerUtils.getLogger(SettingsConfigurationForm.class);
+    private final LoggerUtils log = LoggerUtils.getLogger(SettingsTestGeneratorForm.class);
     private TestGeneratorConfig testGeneratorSettings;
 
     public SettingsTestGeneratorForm(@NotNull Project project) {
@@ -47,7 +47,7 @@ public class SettingsTestGeneratorForm implements Configurable {
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
     public String getDisplayName() {
-        return "Settings Test Generator";
+        return message("settings.title.test.generator");
     }
 
     @Override
@@ -73,10 +73,13 @@ public class SettingsTestGeneratorForm implements Configurable {
         this.tableAnnotations.setModel(this.annotationsTableModel);
 
         this.factoryMethodTableModel = new FactoryMethodTableModel(testGeneratorSettings.getFactoryMethodDataList());
-        this.tableFactorys.setModel(this.factoryMethodTableModel);
+        this.tableFactories.setModel(this.factoryMethodTableModel);
 
         this.textFieldGeneratorClassMethodName.setText(testGeneratorSettings.getGeneratorMethodName());
         this.textFieldGeneratorClassName.setText(testGeneratorSettings.getGeneratorClassName());
+
+        // Update border texts for panels (they are set in $$$setupUI$$$() with hardcoded strings)
+        updatePanelBorders();
 
         log.logInfo("Create Settings Test Generator UI component");
         return table;
@@ -137,7 +140,7 @@ public class SettingsTestGeneratorForm implements Configurable {
     }
 
     private void removeFactoryMethod() {
-        final var selectedRow = this.tableFactorys.getSelectedRow();
+        final var selectedRow = this.tableFactories.getSelectedRow();
         if (selectedRow >= 0) {
             final var data = this.factoryMethodTableModel.getItems().get(selectedRow);
             this.factoryMethodTableModel.removeRow(selectedRow);
@@ -145,6 +148,86 @@ public class SettingsTestGeneratorForm implements Configurable {
         }
     }
 
+
+    /**
+     * Обновляет тексты border'ов для панелей, которые были установлены в $$$setupUI$$$() с захардкоженными строками.
+     */
+    private void updatePanelBorders() {
+        // Находим панель с таблицей аннотаций и обновляем её border
+        // Таблица находится внутри JScrollPane, который находится внутри панели
+        final var annotationScrollPane = findScrollPaneContainingComponent(this.table, this.tableAnnotations);
+        if (annotationScrollPane != null) {
+            final var annotationPanel = findPanelContainingComponent(this.table, annotationScrollPane);
+            if (annotationPanel != null && annotationPanel.getBorder() instanceof TitledBorder) {
+                annotationPanel.setBorder(BorderFactory.createTitledBorder(
+                        null,
+                        message("settings.annotations.table.column.text"),
+                        TitledBorder.DEFAULT_JUSTIFICATION,
+                        TitledBorder.DEFAULT_POSITION,
+                        null,
+                        null
+                ));
+            }
+        }
+
+        // Находим панель с таблицей фабрик и обновляем её border
+        final var factoryScrollPane = findScrollPaneContainingComponent(this.table, this.tableFactories);
+        if (factoryScrollPane != null) {
+            final var factoryPanel = findPanelContainingComponent(this.table, factoryScrollPane);
+            if (factoryPanel != null && factoryPanel.getBorder() instanceof TitledBorder) {
+                factoryPanel.setBorder(BorderFactory.createTitledBorder(
+                        null,
+                        message("settings.factory.method.table.column.class"),
+                        TitledBorder.DEFAULT_JUSTIFICATION,
+                        TitledBorder.DEFAULT_POSITION,
+                        null,
+                        null
+                ));
+            }
+        }
+    }
+
+    /**
+     * Рекурсивно находит JScrollPane, содержащий указанный компонент.
+     */
+    private JScrollPane findScrollPaneContainingComponent(Container parent, Component target) {
+        if (parent == null || target == null) {
+            return null;
+        }
+        for (Component comp : parent.getComponents()) {
+            if (comp == target) {
+                return parent instanceof JScrollPane ? (JScrollPane) parent : null;
+            }
+            if (comp instanceof Container) {
+                final var found = findScrollPaneContainingComponent((Container) comp, target);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Рекурсивно находит панель, содержащую указанный компонент.
+     */
+    private JPanel findPanelContainingComponent(Container parent, Component target) {
+        if (parent == null || target == null) {
+            return null;
+        }
+        for (Component comp : parent.getComponents()) {
+            if (comp == target) {
+                return parent instanceof JPanel ? (JPanel) parent : null;
+            }
+            if (comp instanceof Container) {
+                final var found = findPanelContainingComponent((Container) comp, target);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
 
     private TestGeneratorConfig getSettings() {
         final var settings = new TestGeneratorConfig();
@@ -233,8 +316,8 @@ public class SettingsTestGeneratorForm implements Configurable {
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
                         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null,
                         0, false));
-        tableFactorys = new JTable();
-        scrollPane2.setViewportView(tableFactorys);
+        tableFactories = new JTable();
+        scrollPane2.setViewportView(tableFactories);
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         panel5.add(panel6, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,

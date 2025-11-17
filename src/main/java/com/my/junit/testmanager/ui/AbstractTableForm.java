@@ -25,6 +25,8 @@ import static com.my.junit.testmanager.utils.MessagesBundle.message;
  * @param <T> Тип модели таблицы.
  */
 public abstract class AbstractTableForm<T extends AbstractTableModel> extends DialogWrapper {
+    private static final int MIN_SEARCH_QUERY_LENGTH = 3;
+
     protected JPanel panel;
     protected JTable table;
     private JTextField textFieldSearch;
@@ -91,7 +93,7 @@ public abstract class AbstractTableForm<T extends AbstractTableModel> extends Di
      * @param query Запрос для поиска.
      */
     protected void performSearch(@NotNull String query) {
-        if (query.length() < 3) {
+        if (query.length() < MIN_SEARCH_QUERY_LENGTH) {
             this.sorter.setRowFilter(null);
             return;
         }
