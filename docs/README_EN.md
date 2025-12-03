@@ -1,92 +1,92 @@
 # JUnit Test Manager Plugin
 
-This plugin for IntelliJ IDEA simplifies managing and running JUnit tests, allowing you to group them by profiles and regular expressions, as well as automate the search and movement of test classes.
+This IntelliJ IDEA plugin simplifies the way you search for, group, and run JUnit tests. It also automates moving misplaced test classes and generating reusable test data objects.
 
 ## Contents
 - [Requirements](#requirements)
 - [Button Location](#button-location)
 - [Settings Location](#settings-location)
 - [Settings](#settings)
-- [Profiles](#profiles)
-- [Groups](#groups)
+  - [Profiles](#profiles)
+  - [Groups](#groups)
 - [Settings for Generating Test Data Objects](#settings-for-generating-test-data-objects)
-- [Class Name for Generating Test Data Objects](#class-name-for-generating-test-data-objects)
-- [Method Name for Generating Test Data Objects](#method-name-for-generating-test-data-objects)
-- [Annotation Management](#annotation-management)
-- [Generative Method Management](#generative-method-management)
-- [Features](#features)
+  - [Class Name](#class-name-for-generating-test-data-objects)
+  - [Method Name](#method-name-for-generating-test-data-objects)
+  - [Annotation Management](#annotation-management)
+  - [Generative Method Management](#generative-method-management)
+- [Functionality](#functionality)
+- [Test Results Tool Window](#test-results-tool-window)
 - [Examples](#examples)
-- [Creating Configurations for Selected Tests](#creating-configurations-for-selected-tests)
-- [Creating Configurations for All Tests or Groups](#creating-configurations-for-all-tests-or-groups)
-- [Moving Test Classes Between Packages](#moving-test-classes-between-packages)
+  - [Creating Configurations for Selected Tests](#creating-configurations-for-selected-tests)
+  - [Creating Configurations for All Tests or Groups](#creating-configurations-for-all-tests-or-groups)
+  - [Moving Test Classes Between Packages](#moving-test-classes-between-packages)
+- [Screenshots](#screenshots)
 
 ## Requirements
 - IntelliJ IDEA 2024.1 or higher
-- Java 17 for IntelliJ IDEA runtime (versions 2024.1 and higher already require and support this version)
+- Java 17 for the IDE runtime (already bundled with supported versions)
 
 ## Button Location
-The plugin buttons are available in the context menu when right-clicking in the code editor or in the project panel. They are grouped under **JUnit Test Manager**.
+Plugin actions appear in the context menu under **JUnit Test Manager** when you right-click inside the editor or the Project view.
 
-![Button Layout](images/1.png)
+![Button Location](images/1.png)
 
 ## Settings Location
-Plugin settings are available in **Settings** → **Tools** → **Test Manager Settings**.
+Navigate to **Settings** → **Tools** → **Test Manager Settings**.
 
 ![Settings Location](images/2.png)
 
 ## Settings
-The following options are available in the settings:
-- Group Management
-- Profile Management
-- Interface Language Selection
-- Logging Flag
+Available options:
+- Group management
+- Profile management
+- Interface language selection
+- Logging flag
 
 ### Profiles
-Profiles determine which groups are active when grouping test classes and also affect VM arguments and color highlighting.
+Profiles decide which groups are active when tests are gathered. They also influence VM arguments and color highlighting.
 
 ![Profiles](images/3.png)
 
 ### Groups
-Groups are responsible for grouping test classes when creating run configurations and for defining VM arguments for these configurations. Groups allow you to automatically assign categories to test classes based on file paths and apply specific run settings.
+Groups cluster test classes when creating run configurations and define the VM arguments tied to those configurations. They can automatically assign categories based on file paths and apply custom execution options.
 
 ![Groups](images/4.png)
 
 ![Group Parameters](images/5.png)
 
-A group has 4 parameters:
-- **Name**: The name of the group displayed in the plugin interface and in configurations.
-- **Regular Expression**: Determines which group a test belongs to based on its path in the project. For example:
-- If you want to select all converters in the `Convert` group (known to be in packages with `convert` in their names), use the regular expression `.*convert.*`. Now any test with `convert` in its path will automatically be assigned to this group. You can write more complex regular expressions—it's up to your imagination.
-- If the regex is not specified or doesn't match, the test is placed in the default `Default` group. Regex supports standard Java syntax (Pattern.compile).
-- **VM Arguments**: The Java Virtual Machine arguments with which the test classes in this group will be run. For example:
-- `-Dparallel.tests=true -Dthreads=4` — for parallel test execution.
-- `-Xmx2g` — to increase the heap size if the test classes require a lot of memory.
-- **Color**: The color for visually highlighting the group in tables (cells are colored this color). Default is gray. This helps quickly distinguish groups in dialogs.
-- **Profiles**: Determines which profiles this group is suitable for; they can be combined for different projects with similar groups.
+Each group contains:
+- **Name** — how the group appears in the UI and resulting configurations.
+- **Regular expression** — determines whether a test belongs to the group using its project path.  
+  - Example: use `.*convert.*` to capture all converters located in packages containing `convert`.  
+  - If no regex is provided or it does not match, the test is placed in the default `Default` group. Standard Java `Pattern` syntax is supported.
+- **VM arguments** — JVM flags for this group, e.g. `-Dparallel.tests=true -Dthreads=4` or `-Xmx2g`.
+- **Color** — background color applied to rows in dialogs for quick visual grouping.
+- **Profiles** — list of profiles that can reuse this group, which makes it easy to share setups across projects.
 
-Groups can be added, edited, and deleted directly from the settings. By default, the `Default` group (without regex and VM arguments) is always present; you can override it by creating your own without regex and linking it to the `Default` profile.
+Groups can be created, edited, or deleted right inside the settings. The `Default` group (no regex, no VM args) always exists, but you can override it with your own definition linked to the `Default` profile.
 
-## Settings for generating Test Data objects
-![Settings for generating Test Data objects](images/13.png)
+## Settings for Generating Test Data Objects
+![Test Data Settings](images/13.png)
 
-To invoke this functionality, navigate to the object itself, open the context menu at the class level, and select `Generate` > `Generate Test Data Object`.
+To launch the generator, open the desired class, right-click on the class declaration, and choose `Generate` → `Generate Test Data Object`.
 
-![Settings for generating Test Data objects](images/14.png)
+![Invocation](images/14.png)
 
-The following options are available in the settings:
-- Name of the class for generating Test Data objects
-- Name of the method for generating Test Data objects
-- Manage annotations
-- Manage generative methods
+The dialog contains:
+- Class name prefix
+- Method name prefix
+- Annotation management
+- Generative method management
 
-### Name of the class for generating Test Data objects
-Defines the prefix for the generated class with Test Data objects. By default, it will look like `public class ClassDataTestGenerator`.
+### Class Name for Generating Test Data Objects
+Defines the prefix for a generated class, for example `public class ClassDataTestGenerator`.
 
-### Name of the method for generating Test Data objects
-Defines the prefix for the generated method with Test Data objects. By default, it will look like `public static ClassObjectData generateClassDataTest()`
+### Method Name for Generating Test Data Objects
+Defines the prefix for a generated method, e.g. `public static ClassObjectData generateClassDataTest()`.
 
 ### Annotation Management
-Allows you to add, edit, and remove annotations that will be used when generating Test Data objects. For example, you can add the `@NonNull` annotation above a method to clearly indicate that we are generating a non-null object. It also allows you to specify it above the class.
+Add, edit, or remove annotations that decorate generated classes or methods. Example:
 ```java
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class ClassObjectDataGenerator {
@@ -102,112 +102,118 @@ public class ClassObjectDataGenerator {
 }
 ```
 
-#### Fields for adding annotations
-- Specify the annotation itself (e.g. `@NonNull`)
-- Specify `import` for this annotation (e.g. `import org.springframework.lang.NonNull`)
-- Specify where the annotation will be added: the class (`CLASS`) or the method (`METHOD`)
+Required fields:
+- Annotation text (e.g. `@NonNull`)
+- Import (e.g. `import org.springframework.lang.NonNull`)
+- Target (class or method)
 
-### Managing Generative Methods
-Allows you to add and remove generative methods that will be used when generating Test Data objects. For example, you can add the `randomAlphabetic(10)` method, which will generate a random string of letters of a certain length.
+### Generative Method Management
+Register helper methods used to fill specific field types.
 
-#### Fields for adding generative methods
-- Specify the object type the method will be used for (e.g., `java.lang.String`)
-- Specify the method itself (e.g., `randomAlphabetic(10)`)
-- Specify `import` for this method (e.g., `import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic`)
+Required fields:
+- Object type (e.g. `java.lang.String`)
+- Method (e.g. `randomAlphabetic(10)`)
+- Import (e.g. `import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic`)
 
 ## Functionality
-Test classes are detected automatically:
-- Classes with the `@Test` annotation (or `@ParameterizedTest` or similar).
-- Classes inheriting from `junit.framework.TestCase`.
-- Classes with a name ending in `Test`.
+Test classes are detected automatically if they:
+- Contain annotations such as `@Test` or `@ParameterizedTest`
+- Extend `junit.framework.TestCase`
+- Have names ending with `Test`
 
 ### 1. Find All Tests in Project
-Finds **all** test classes in the project (recursively across all modules and test source roots).
+Recursively searches **all** modules and test source roots.
 
 ### 2. Find Tests in Changes
-Finds test classes that have been changed or added. For correct file tracking, it is recommended to connect the project to Git so that IDEA can detect changes.
+Finds test classes that were modified or created. Connect the project to Git so IDEA can track changes accurately.
 
 ### 3. Find Tests in Directory
-Finds test classes in the selected directory (recursively). Available only by right-clicking a directory in the project.
+Searches recursively within the selected directory. Available through the context menu on directories.
 
 ### 4. Relocate Tests
-Analyzes all classes in src/main/java, finds related test classes in the test source roots, and checks for package matches:
-- The test must be in the same package as the class (e.g., com.example.MyClass → com.example.MyClassTest).
-- The relationship is determined by the name (ClassName + "Test") and the presence of an import of the class in the test.
-- If the packages don't match, offers to move the test to the class package (while maintaining the test source root). Shows a preview dialog.
+Analyzes `src/main/java`, finds related tests in the test roots, and verifies packages:
+- The test must share the same package as the production class (e.g. `com.example.MyClass` → `com.example.MyClassTest`).
+- Matching relies on the `ClassName + "Test"` convention plus the presence of the corresponding import.
+- If packages differ, the plugin offers to move the test to the correct package (while keeping the same test source root) and shows a preview dialog.
 
 ### 5. Relocate Changes Tests
-Similar to `Relocate Tests`, but only analyzes **changed** classes in the main source roots.
+Same as Relocate Tests, but limited to **changed** production classes.
 
-**Note**:
-- Search and copying are supported for all tables.
-- For the `Find Tests in Changes`, `Find All Tests in Project`, and `Find Tests in Directory` features:
+**Notes**
+- Every table supports search and copy.
+- `Find Tests in Changes`, `Find All Tests in Project`, `Find Tests in Directory`:
+  - Search uses class names only.
+  - Copying without a selection exports class paths for every group; copying with a selection exports only the highlighted tests.
+- `Relocate Tests`, `Relocate Changes Tests`:
+  - Search uses class names only.
+  - Copying exports class names.
+  - Double-clicking opens the class in IDEA.
 
-- Search by class name only;
-- When copying, only class paths are copied from a new line. If no specific test classes are selected, the configuration will be created for all tests by group;
-- If selected, only the selected ones and by group.
-- For the `Relocate Tests` and `Relocate Changes Tests` features:
+## Test Results Tool Window
+Once tests finish, IntelliJ IDEA emits SMTRunner events that the plugin intercepts. Results appear inside the `JUnit Test Manager Results` tool window (`View` → `Tool Windows` → `JUnit Test Manager Results`). The window opens automatically with fresh data:
 
-- Search by class name only;
-- When copying, only the class name is copied from a new line;
-- Double-clicking on the class name opens the file in IDEA.
+- **Run summary.** Displays total duration plus counts of passed, warning, and failed tests. *Show totals* toggles per-class summary rows, and *Regressions only* highlights tests whose status changed relative to the previous run.
+- **Status filters.** Checkboxes let you hide or show successful, warning, failed, and ignored rows to focus on what matters.
+- **Per-test history.** The service stores the previous status and log for each method, making regressions immediately visible.
+- **Navigation and logs.** Double-click the method column to jump to the exact test method (or the class if the method cannot be resolved). Double-click elsewhere to open the log viewer: the left pane shows the current run, the right pane shows the previous run.
+- **Native integration.** Everything is wired into the standard SMTRunner pipeline, so no additional setup is required.
+
+![Results Tool Window](images/15.png)
 
 ## Examples
-Simple settings are used for the examples.
+Simple settings are used for the examples below.
 
-![Example settings](images/6.png)
+![Example Settings](images/6.png)
 
-### Creating configurations for selected tests
-- The `package1` profile is active in the settings; The group has the regex `.*package1.*`.
-- As you can see, one of our groups and the default group were detected.
+### Creating Configurations for Selected Tests
+- Profile `package1` is active.
+- A group with regex `.*package1.*` is configured.
+- The dialog shows one custom group plus the default group.
 
-![Found tests](images/7.png)
+![Found Tests](images/7.png)
 
-- For example, the first two classes were selected to create configurations only for them. As a result, two configurations were created, and the arguments specified for our group were applied to one of them.
+Two classes are selected, resulting in two run configurations. Each configuration inherits the VM arguments of its group.
 
-![Created configurations](images/8.png)
+![Created Configurations](images/8.png)
 
-### Creating configurations for all tests or groups
-- Settings.
+### Creating Configurations for All Tests or Groups
+1. Configure the groups and profiles.
 
 ![Settings](images/9.png)
 
-- Found test classes.
+2. Collect all detected test classes.
 
-![Found tests](images/10.png)
+![Found Tests](images/10.png)
 
-- Our configurations for each group.
+3. Generate configurations for every group.
 
 ![Configurations](images/11.png)
 
-**Note**: A test configuration can have N test classes per group; they are specified using Pattern.
+**Note:** A single configuration can include multiple classes per group; they are specified via regex `Pattern`.
 
-### Moving test classes across packages
-The settings are the same as before; they do not affect this functionality. We analyze files in the main source root and find test classes for them.
-- We have a class named `NameClass2` located in `package2`, but we decided to move it to another package, for example, `package3`.
-- Our test for this class remains in `package2`; it has the correct name `NameClass2Test` and the imports reference `NameClass2` itself, so this test class is suitable for moving. We know where it should be defined.
+### Moving Test Classes Between Packages
+Settings do not affect this feature. The plugin analyzes files in the main source root and finds their tests.
+- Suppose `NameClass2` lives in `package2`, but you moved it to `package3`.
+- `NameClass2Test` remains in `package2`, follows the correct naming convention, and imports the production class, so it can be relocated automatically.
 
 ![Move Dialog](images/12.png)
 
-- After moving, the test class will be placed in `package3` only in the test source root.
+After confirmation, the test is placed in `package3` (inside the test source root). Only rows with checked boxes are moved; click the `Selected` header to toggle all rows.
 
-**Note**: Only test classes with a selected checkbox are moved. You can select or clear all checkboxes by clicking the 'Selected' heading.
+## Troubleshooting
+- **Regex does not work**: Ensure the pattern matches Java `Pattern` syntax and test it with actual paths.
+- **Tests are not found**: Confirm the classes meet the detection criteria and that test source roots are configured.
+- **Imports broke after moving**: This should not happen, but if it does, fix the imports manually.
+- **Other issues**: Enable plugin logging in the settings and inspect the IDE logs.
+- **Test Data objects are not generated**: Run the action on the class level, make sure the class contains fields, double-check the generator settings, and retry after indexing (or create the missing package and rerun).
 
-### In Case of Issues
-- **Regex not working**: Make sure the regular expression matches Java Pattern syntax. Test it with file paths.
-- **Tests not found**: Make sure the classes match the criteria (annotations, inheritance, or name). Also, make sure the test source roots are configured correctly in the project.
-- **Moving broke imports**: This shouldn't happen, but if it does, manually update the imports in the test after moving if they weren't updated automatically.
-- If other issues arise, enable logging in the plugin settings and check the logs for diagnostics.
-- **Test Data objects not generated**: Make sure you're calling generation at the class level and that the class contains the fields to generate. Check the generation settings and ensure the required annotations and methods are specified correctly. There may also be an error due to project indexing, and the plugin simply doesn't recognize the package in which Test Data objects need to be generated. The quickest solution is to create this package and rerun the command.
+## Contribute
+- Have an idea or a bug to report? Create an [issue](https://github.com/Kuznetsov-Igor/Junit-Test-Manager/issues).
+- Pull requests with improvements or new features are welcome.
 
-### Contribute
-- If you have ideas for improving the plugin or would like to report a bug, please create an [issue](https://github.com/Kuznetsov-Igor/Junit-Test-Manager/issues)
-- Development support is welcome! You can always create a pull request with improvements or new features.
-
-### Tested on
-Tested:
-- Ubuntu 20.04.6 LTS
-- IntelliJ IDEA 2024.1.6 (Community Edition) Runtime version: 17.0.11+1-b1207.30 amd64, VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.
-- IntelliJ IDEA 2025.2.3 (Community Edition) Runtime version: 21.0.8+9-b1038.72 amd64 (JCEF 122.1.9) VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.
-- Windows 10 Pro 22H2 19045.6456
-- IntelliJ IDEA 2024.1.4 (Ultimate Edition), Runtime version: 17.0.11+1-b1207.24 amd64, VM: OpenJDK 64-Bit Server VM by JetBrains s.r.o.
+## Tested On
+- Ubuntu 20.04.6 LTS  
+  - IntelliJ IDEA 2024.1.6 (Community Edition) Runtime: 17.0.11+1-b1207.30 (JetBrains OpenJDK)  
+  - IntelliJ IDEA 2025.2.3 (Community Edition) Runtime: 21.0.8+9-b1038.72 (JCEF 122.1.9)
+- Windows 10 Pro 22H2 19045.6456  
+  - IntelliJ IDEA 2024.1.4 (Ultimate Edition) Runtime: 17.0.11+1-b1207.24 (JetBrains OpenJDK)

@@ -1,12 +1,21 @@
 <idea-plugin>
     <id>com.my.junit.testmanager</id>
     <name>JUnit Test Manager</name>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <vendor email="ikjapan1@gmail.com">Kuznetsov Igor</vendor>
 
-    <description> <![CDATA[ JUnit Test Manager simplifies JUnit testing in Java projects: generate run configurations with custom VM options, group tests by regex paths, auto-relocate misplaced tests after refactoring, and create test data generator classes for quick instantiation of model objects in tests. The plugin provides comprehensive test management capabilities including test discovery, grouping, relocation, and automated test data generation with full support for modern Java features like records.\n JUnit Test Manager упрощает работу с JUnit-тестами в Java-проектах: генерирует конфигурации запуска с кастомными VM-аргументами, группирует тесты по regex-путям, автоматически перемещает тесты в нужные пакеты после рефакторинга и создает классы-генераторы тестовых данных для быстрого создания экземпляров моделей в тестах. Плагин предоставляет комплексные возможности управления тестами, включая поиск тестов, группировку, релокацию и автоматическую генерацию тестовых данных с полной поддержкой современных возможностей Java, таких как records. ]]> </description>
+    <description> <![CDATA[
+        JUnit Test Manager simplifies working with JUnit tests in Java projects: generate run configurations with custom VM options, group tests by regex-based paths, automatically relocate misplaced tests after refactoring, and create test data generator classes for fast instantiation of model objects. The plugin provides a full toolset for test discovery, grouping, relocation, and automated test data generation with support for modern Java features like records.
 
-    <change-notes> <![CDATA[ Version 1.0.3: Improved code quality and stability - enhanced error handling, added form validation, fixed bugs, improved code architecture, and full internationalization support. ]]>
+        JUnit Test Manager упрощает работу с JUnit-тестами в Java-проектах: генерирует конфигурации запуска с кастомными VM-аргументами, группирует тесты по путям на основе регулярных выражений, автоматически перемещает тесты в нужные пакеты после рефакторинга и создаёт классы-генераторы тестовых данных для быстрого создания экземпляров моделей. Плагин предоставляет полный набор инструментов для поиска тестов, группировки, релокации и автоматической генерации тестовых данных с поддержкой современных возможностей Java, таких как records.
+    ]]> </description>
+
+    <change-notes> <![CDATA[
+        Version 1.0.4:
+        - Added flexible filtering in the test results tool window, including an option to show/hide per-class summary rows.
+        - Improved localization usage and minor UI tweaks for test results.
+        - Internal refactoring and small documentation updates.
+    ]]>
     </change-notes>
 
 
@@ -20,6 +29,10 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.my.junit.testmanager.config.TestManagerConfig"/>
         <projectService serviceImplementation="com.my.junit.testmanager.config.TestGeneratorConfig"/>
+        <projectService serviceImplementation="com.my.junit.testmanager.toolwindow.TestResultsToolWindowManager"/>
+        <projectService serviceImplementation="com.my.junit.testmanager.services.TestResultsAggregatorService"/>
+        <projectService serviceImplementation="com.my.junit.testmanager.services.TestRunEventsListenerService"/>
+        <postStartupActivity implementation="com.my.junit.testmanager.services.TestResultsStartupActivity"/>
 
         <applicationConfigurable
                 parentId="tools"
@@ -35,6 +48,10 @@
                 displayName="Test Data Generators"/>
 
         <notificationGroup id="JUnitTestManagerNotifications" displayType="BALLOON" isLogByDefault="true"/>
+        <toolWindow id="JUnit Test Manager Results"
+                    anchor="bottom"
+                    factoryClass="com.my.junit.testmanager.toolwindow.TestResultsToolWindowFactory"
+                    icon="/META-INF/pluginIcon.svg"/>
     </extensions>
 
     <actions>

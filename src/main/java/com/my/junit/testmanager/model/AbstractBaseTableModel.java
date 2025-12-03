@@ -74,4 +74,11 @@ public abstract class AbstractBaseTableModel<T> extends AbstractTableModel {
     public List<T> getItems() {
         return new ArrayList<>(items);
     }
+
+    public T getItemAt(int rowIndex) {
+        if (rowIndex < 0 || rowIndex >= items.size()) {
+            throw new IndexOutOfBoundsException("Row index out of bounds: " + rowIndex);
+        }
+        return items.get(rowIndex);
+    }
 }
